@@ -1,0 +1,19 @@
+{
+  "images": {
+    "wide_16_9": "assets/images/placeholder-wide-16x9.webp",
+    "square_1_1": "assets/images/placeholder-square-1x1.webp",
+    "portrait_3_4": "assets/images/placeholder-portrait-3x4.webp",
+    "avatar": "assets/images/avatar-placeholder.webp",
+    "logo_1": "assets/images/logoipsum-1.svg",
+    "logo_2": "assets/images/logoipsum-2.svg"
+  },
+  "icons": {
+    "unknown": "assets/icons/question.svg",
+    "plus": "assets/icons/plus.svg",
+    "check": "assets/icons/check.svg",
+    "arrow_right": "assets/icons/arrow-right.svg",
+    "image": "assets/icons/image.svg",
+    "user": "assets/icons/user.svg"
+  },
+  "intent": "Generated geometric placeholder assets for editable WordPress block scaffolding. No third-party source images are included."
+}
