@@ -50,6 +50,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// This exact file is copied into every Dhali plugin that needs update
+// checking, and several of those plugins run active on the same site at
+// once. require_once only prevents re-including the same file *path*
+// twice — it has no way to know two different files at two different
+// paths declare the same class name. Without this guard, whichever
+// plugin's copy loads first "wins" and every other plugin's copy fatals
+// trying to redeclare the class. Wrapping the whole declaration means
+// only the first copy loaded actually defines it; every other plugin's
+// copy silently no-ops and just uses that same shared class.
+if ( ! class_exists( 'Dhali_Plugin_Updater' ) ) :
+
 class Dhali_Plugin_Updater {
 
 	/** @var string Absolute path to the plugin's main file. */
@@ -260,3 +271,5 @@ class Dhali_Plugin_Updater {
 		);
 	}
 }
+
+endif; // class_exists( 'Dhali_Plugin_Updater' ).
