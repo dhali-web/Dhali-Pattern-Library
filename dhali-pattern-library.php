@@ -83,19 +83,41 @@ add_action( 'init', 'dhali_register_agency_patterns' );
  * Templates are injected into the active theme's template hierarchy so
  * WordPress will use them automatically without modifying the theme files.
  */
-function dhali_register_block_templates( $query, $template_type ) {
+function dhali_register_block_templates( $query_result, $query_args, $template_type ) {
 	$template_directory = plugin_dir_path( __FILE__ ) . 'templates/';
 
 	if ( ! is_dir( $template_directory ) ) {
-		return $query;
+		return $query_result;
 	}
+
+	// Only hand back templates WordPress actually asked for on this request.
+	// Skipping this is what causes "Undefined array key" warnings in
+	// resolve_block_template()'s usort — it prioritizes slugs against the
+	// current hierarchy, and slugs we injected uninvited aren't in it.
+	$requested_slugs = isset( $query_args['slug__in'] ) ? (array) $query_args['slug__in'] : null;
 
 	$template_files = glob( $template_directory . '*.html' );
 
 	foreach ( $template_files as $template_file ) {
-		$slug     = basename( $template_file, '.html' );
-		$template = new WP_Block_Template();
+		$slug = basename( $template_file, '.html' );
 
+		if ( null !== $requested_slugs && ! in_array( $slug, $requested_slugs, true ) ) {
+			continue;
+		}
+
+		$already_registered = false;
+		foreach ( $query_result as $existing ) {
+			if ( $existing->slug === $slug ) {
+				$already_registered = true;
+				break;
+			}
+		}
+
+		if ( $already_registered ) {
+			continue;
+		}
+
+		$template                 = new WP_Block_Template();
 		$template->type           = $template_type;
 		$template->theme          = get_stylesheet();
 		$template->slug           = $slug;
@@ -108,24 +130,12 @@ function dhali_register_block_templates( $query, $template_type ) {
 		$template->content        = file_get_contents( $template_file );
 		$template->source         = 'plugin';
 
-		// Only add if a template with this slug isn't already registered
-		// (lets a theme or user-saved DB template take precedence).
-		$already_registered = false;
-		foreach ( $query as $existing ) {
-			if ( $existing->slug === $slug ) {
-				$already_registered = true;
-				break;
-			}
-		}
-
-		if ( ! $already_registered ) {
-			$query[] = $template;
-		}
+		$query_result[] = $template;
 	}
 
-	return $query;
+	return $query_result;
 }
-add_filter( 'get_block_templates', 'dhali_register_block_templates', 10, 2 );
+add_filter( 'get_block_templates', 'dhali_register_block_templates', 10, 3 );
 
 /**
  * Serve a single plugin template when WordPress resolves it by slug.
