@@ -11,6 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/includes/class-dhali-plugin-updater.php';
+Dhali_Plugin_Updater::init( __FILE__, 'dhali-pattern-library', 'master' );
+
 /**
  * Enqueue utility classes on the front end.
  *
