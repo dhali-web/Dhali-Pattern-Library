@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Dhali Pattern Library
  * Description: A centralized, version-controlled repository for our custom block patterns and FSE templates.
- * Version: 1.2.1
+ * Version: 1.2.2
  * Author: Dhali
  * Text Domain: Dhali-Pattern-Library
  * Update URI: https://github.com/dhali-web/Dhali-Pattern-Library
