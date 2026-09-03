@@ -51,6 +51,42 @@ function dhali_enqueue_editor_utility_classes() {
 add_action( 'enqueue_block_editor_assets', 'dhali_enqueue_editor_utility_classes' );
 
 /**
+ * Enqueue the Scroll Timeline pattern's CSS/JS.
+ *
+ * Only loaded on pages whose content actually contains the pattern
+ * (checked via the .dhali-timeline class in post_content), so this never
+ * adds weight to pages that don't use it. Unlike the utility classes
+ * above, this asset is genuinely per-pattern rather than sitewide, since
+ * it's the only pattern in this library with its own runtime behavior.
+ */
+function dhali_enqueue_timeline_assets() {
+	if ( ! is_singular() ) {
+		return;
+	}
+
+	global $post;
+	if ( ! $post || false === strpos( $post->post_content, 'dhali-timeline' ) ) {
+		return;
+	}
+
+	wp_enqueue_style(
+		'dhali-timeline',
+		plugin_dir_url( __FILE__ ) . 'assets/css/dhali-timeline.css',
+		array(),
+		'1.0.0'
+	);
+
+	wp_enqueue_script(
+		'dhali-timeline',
+		plugin_dir_url( __FILE__ ) . 'assets/js/dhali-timeline.js',
+		array(),
+		'1.0.0',
+		true
+	);
+}
+add_action( 'wp_enqueue_scripts', 'dhali_enqueue_timeline_assets' );
+
+/**
  * Register custom block patterns and the Dhali pattern category.
  */
 function dhali_register_agency_patterns() {

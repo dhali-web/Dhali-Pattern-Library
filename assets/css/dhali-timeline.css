@@ -1,0 +1,158 @@
+/* =========================================================
+   Dhali Pattern Library — Scroll Timeline
+   Native Gutenberg version of the Meatlers scroll-timeline
+   interaction.
+
+   Ownership model (per the locked architecture):
+
+     GUTENBERG / Ollie tokens
+       -> section padding, item padding, column gap,
+          typography, content colors. Anything an editor
+          should see reflected in the block sidebar lives
+          in block attributes, not here.
+
+     THIS FILE
+       -> component geometry Gutenberg has no control for:
+          rail, progress fill, marker dot, alternation,
+          active-state color swap, mobile teardown.
+
+     JS (timeline.js)
+       -> runtime state only: a unitless 0-1 progress value
+          and the .is-active class. Nothing else.
+
+   .dhali-timeline is applied to the INNER constrained Group
+   (per Ollie's section -> constrained group -> content
+   structure), not the outer full-width section, so the rail
+   spans the content area rather than the section's own
+   vertical padding.
+   ========================================================= */
+
+.dhali-timeline {
+    /* ---- Design tokens (site-agnostic) ----
+       Colors map to Ollie preset slots per the palette's
+       pairing rules: primary for the active/progress state,
+       border-light for the resting track, border-dark for
+       resting markers (Ollie's existing divider/emphasis
+       role). Override any of these per-site to reskin the
+       component without touching CSS or JS. */
+    --dhali-timeline-color: var(--wp--preset--color--primary);
+    --dhali-timeline-track-color: var(--wp--preset--color--border-light);
+    --dhali-timeline-marker-color: var(--wp--preset--color--border-dark);
+
+    /* ---- Component geometry ----
+       Implementation mechanics, not editor design decisions,
+       so these stay as plain values rather than tokens. */
+    --dhali-timeline-width: 2px;
+    --dhali-timeline-dot-size: 20px;
+
+    position: relative;
+    width: 100%;
+
+    /* Keeps the rail/progress/marker z-index stack local to this
+       component so it can't unexpectedly interact with positioned
+       content elsewhere on a client site. */
+    isolation: isolate;
+}
+
+/* Gray track. top/bottom (absolute offsets, not a percentage
+   height) reliably spans the container's real content height
+   even though .dhali-timeline itself has no explicit height. */
+.dhali-timeline::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: var(--dhali-timeline-width);
+    background: var(--dhali-timeline-track-color);
+    transform: translateX(-50%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Progress rail. Same top:0/bottom:0 full-height trick as the
+   track above, then scaleY() reveals the completed fraction.
+   JS writes a bare number (0-1) to --dhali-timeline-progress —
+   no px, no %, so it never goes stale when content height
+   changes (image loads, editor adds an item, font swap, etc). */
+.dhali-timeline::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: var(--dhali-timeline-width);
+    background: var(--dhali-timeline-color);
+    transform: translateX(-50%) scaleY(var(--dhali-timeline-progress, 0));
+    transform-origin: top;
+    z-index: 1;
+    pointer-events: none;
+    /* NOTE: transform is not additive across rules. If another
+       rule ever needs to move this element, fold it into this
+       same transform declaration rather than overriding it. */
+}
+
+/* ---- Timeline items (each is a core/columns block) ----
+   No padding or column-gap here — those are authored as
+   Ollie spacing-token block attributes on the pattern's
+   Columns blocks so editors see real values in the sidebar
+   instead of invisible component CSS. This file only adds
+   what Gutenberg can't: position context, z-index stacking,
+   and the alternating layout. */
+.dhali-timeline__item {
+    position: relative;
+    z-index: 2;
+}
+
+/* Alternate every second item, desktop only. Editors always
+   author Image | Content in the same order; this is the only
+   thing that produces the visual left/right swap. */
+.dhali-timeline__item:nth-child(2n) {
+    flex-direction: row-reverse;
+}
+
+/* Marker dot, centered on the rail. */
+.dhali-timeline__item::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--dhali-timeline-dot-size);
+    height: var(--dhali-timeline-dot-size);
+    background: var(--dhali-timeline-marker-color);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    transition: background-color 0.2s ease;
+}
+
+.dhali-timeline__item.is-active::before {
+    background: var(--dhali-timeline-color);
+}
+
+/* ---- Mobile: strip the timeline chrome, keep content stacked ----
+   The underlying core blocks remain fully valid, editable
+   Gutenberg content with the enhancement removed — nothing
+   here touches block markup, only presentation.
+
+   781px matches core Gutenberg's own Columns stacking point
+   (`@media (max-width:781px) .wp-block-columns:not(.is-not-
+   stacked-on-mobile) > .wp-block-column { flex-basis:100% }`),
+   confirmed against the current core/columns stylesheet. This
+   MUST stay in sync with BREAKPOINT in timeline.js, and both
+   should be re-verified against the target Ollie/WP version's
+   actual shipped breakpoint before production use — WordPress
+   does not treat this value as stable across versions and it
+   has changed before. */
+@media (max-width: 781px) {
+    .dhali-timeline::before,
+    .dhali-timeline::after,
+    .dhali-timeline__item::before {
+        display: none;
+    }
+
+    .dhali-timeline__item,
+    .dhali-timeline__item:nth-child(2n) {
+        flex-direction: column;
+    }
+}
