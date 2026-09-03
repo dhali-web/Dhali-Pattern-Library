@@ -69,22 +69,58 @@ function dhali_enqueue_timeline_assets() {
 		return;
 	}
 
+	$css_path = plugin_dir_path( __FILE__ ) . 'assets/css/dhali-timeline.css';
+	$js_path  = plugin_dir_path( __FILE__ ) . 'assets/js/dhali-timeline.js';
+
 	wp_enqueue_style(
 		'dhali-timeline',
 		plugin_dir_url( __FILE__ ) . 'assets/css/dhali-timeline.css',
 		array(),
-		'1.0.0'
+		file_exists( $css_path ) ? filemtime( $css_path ) : '1.0.0'
 	);
 
 	wp_enqueue_script(
 		'dhali-timeline',
 		plugin_dir_url( __FILE__ ) . 'assets/js/dhali-timeline.js',
 		array(),
-		'1.0.0',
+		file_exists( $js_path ) ? filemtime( $js_path ) : '1.0.0',
 		true
 	);
 }
 add_action( 'wp_enqueue_scripts', 'dhali_enqueue_timeline_assets' );
+
+/**
+ * Enqueue the Scroll Timeline pattern's CSS inside the block editor.
+ *
+ * CSS only, not the JS — the scroll-progress behavior is designed
+ * around the real page's scroll container and doesn't make sense to
+ * run inside the editor's iframe, but editors should still be able
+ * to see the rail/dots while placing the pattern, matching how
+ * dhali_enqueue_editor_utility_classes() already mirrors the
+ * front-end utility classes for the same WYSIWYG reason.
+ *
+ * Uses the currently-edited post's last-saved content as the same
+ * "does this page use the pattern" check as the front-end enqueue —
+ * good enough since a post only needs the pattern inserted once to
+ * be picked up on the next content check, and it avoids loading this
+ * CSS in every editor screen regardless of what's being edited.
+ */
+function dhali_enqueue_timeline_editor_assets() {
+	global $post;
+	if ( ! $post || false === strpos( $post->post_content, 'dhali-timeline' ) ) {
+		return;
+	}
+
+	$css_path = plugin_dir_path( __FILE__ ) . 'assets/css/dhali-timeline.css';
+
+	wp_enqueue_style(
+		'dhali-timeline-editor',
+		plugin_dir_url( __FILE__ ) . 'assets/css/dhali-timeline.css',
+		array(),
+		file_exists( $css_path ) ? filemtime( $css_path ) : '1.0.0'
+	);
+}
+add_action( 'enqueue_block_editor_assets', 'dhali_enqueue_timeline_editor_assets' );
 
 /**
  * Register custom block patterns and the Dhali pattern category.

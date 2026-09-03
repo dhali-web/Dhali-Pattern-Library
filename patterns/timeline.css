@@ -20,14 +20,14 @@
        -> runtime state only: a unitless 0-1 progress value
           and the .is-active class. Nothing else.
 
-   .dhali-timeline is applied to the INNER constrained Group
+   .dpl-timeline is applied to the INNER constrained Group
    (per Ollie's section -> constrained group -> content
    structure), not the outer full-width section, so the rail
    spans the content area rather than the section's own
    vertical padding.
    ========================================================= */
 
-.dhali-timeline {
+.dpl-timeline {
     /* ---- Design tokens (site-agnostic) ----
        Colors map to Ollie preset slots per the palette's
        pairing rules: primary for the active/progress state,
@@ -35,49 +35,31 @@
        resting markers (Ollie's existing divider/emphasis
        role). Override any of these per-site to reskin the
        component without touching CSS or JS. */
-    --dhali-timeline-color: var(--wp--preset--color--primary);
-    --dhali-timeline-track-color: var(--wp--preset--color--border-light);
-    --dhali-timeline-marker-color: var(--wp--preset--color--border-dark);
+    --dpl-timeline-color: var(--wp--preset--color--primary);
+    --dpl-timeline-track-color: var(--wp--preset--color--border-light);
+    --dpl-timeline-marker-color: var(--wp--preset--color--border-dark);
 
     /* ---- Component geometry ----
        Implementation mechanics, not editor design decisions,
        so these stay as plain values rather than tokens. */
-    --dhali-timeline-width: 2px;
-    --dhali-timeline-dot-size: 20px;
-
-    /* Row gutter. This was originally authored as a Gutenberg
-       blockGap block attribute on each .dhali-timeline__item
-       Columns block instead of here, per the general preference
-       for editor-visible spacing tokens. That broke in
-       production: core Columns' blockGap serialization didn't
-       match what this site's Gutenberg version expected, the
-       block was flagged invalid, and "Attempt recovery" silently
-       deleted the gap declaration rather than fixing it (confirmed
-       by diffing the before/after saved markup — padding survived
-       intact, gap did not). Moved back to a static CSS value
-       instead of re-guessing at another serialization to hand-author. */
-    --dhali-timeline-gutter: var(--wp--preset--spacing--xx-large, 4rem);
+    --dpl-timeline-width: 2px;
+    --dpl-timeline-dot-size: 20px;
 
     position: relative;
     width: 100%;
-
-    /* Keeps the rail/progress/marker z-index stack local to this
-       component so it can't unexpectedly interact with positioned
-       content elsewhere on a client site. */
-    isolation: isolate;
 }
 
 /* Gray track. top/bottom (absolute offsets, not a percentage
    height) reliably spans the container's real content height
-   even though .dhali-timeline itself has no explicit height. */
-.dhali-timeline::before {
+   even though .dpl-timeline itself has no explicit height. */
+.dpl-timeline::before {
     content: "";
     position: absolute;
     top: 0;
     bottom: 0;
     left: 50%;
-    width: var(--dhali-timeline-width);
-    background: var(--dhali-timeline-track-color);
+    width: var(--dpl-timeline-width);
+    background: var(--dpl-timeline-track-color);
     transform: translateX(-50%);
     z-index: 0;
     pointer-events: none;
@@ -85,18 +67,18 @@
 
 /* Progress rail. Same top:0/bottom:0 full-height trick as the
    track above, then scaleY() reveals the completed fraction.
-   JS writes a bare number (0-1) to --dhali-timeline-progress —
+   JS writes a bare number (0-1) to --dpl-timeline-progress —
    no px, no %, so it never goes stale when content height
    changes (image loads, editor adds an item, font swap, etc). */
-.dhali-timeline::after {
+.dpl-timeline::after {
     content: "";
     position: absolute;
     top: 0;
     bottom: 0;
     left: 50%;
-    width: var(--dhali-timeline-width);
-    background: var(--dhali-timeline-color);
-    transform: translateX(-50%) scaleY(var(--dhali-timeline-progress, 0));
+    width: var(--dpl-timeline-width);
+    background: var(--dpl-timeline-color);
+    transform: translateX(-50%) scaleY(var(--dpl-timeline-progress, 0));
     transform-origin: top;
     z-index: 1;
     pointer-events: none;
@@ -112,75 +94,50 @@
    instead of invisible component CSS. This file only adds
    what Gutenberg can't: position context, z-index stacking,
    and the alternating layout. */
-.dhali-timeline__item {
+.dpl-timeline__item {
     position: relative;
     z-index: 2;
-    column-gap: var(--dhali-timeline-gutter);
 }
 
 /* Alternate every second item, desktop only. Editors always
    author Image | Content in the same order; this is the only
    thing that produces the visual left/right swap. */
-.dhali-timeline__item:nth-child(2n) {
+.dpl-timeline__item:nth-child(2n) {
     flex-direction: row-reverse;
 }
 
-/* Vertical spacing between the date/heading/paragraph stack.
-   Originally authored as a blockGap block attribute on the
-   Group instead of here — that also broke in production for
-   the same reason the row gutter did (see the note on
-   --dhali-timeline-gutter above): blockGap on a group without
-   an explicit flex layout type serializes via a dynamically
-   generated per-instance class and stylesheet rule, not a
-   predictable inline property, so a static pattern file can't
-   hand-author it correctly. Plain child-margin spacing avoids
-   depending on that mechanism entirely. */
-.dhali-timeline__content > * + * {
-    margin-top: var(--wp--preset--spacing--small, 1rem);
-}
-
 /* Marker dot, centered on the rail. */
-.dhali-timeline__item::before {
+.dpl-timeline__item::before {
     content: "";
     position: absolute;
     top: 50%;
     left: 50%;
-    width: var(--dhali-timeline-dot-size);
-    height: var(--dhali-timeline-dot-size);
-    background: var(--dhali-timeline-marker-color);
+    width: var(--dpl-timeline-dot-size);
+    height: var(--dpl-timeline-dot-size);
+    background: var(--dpl-timeline-marker-color);
     border-radius: 50%;
     transform: translate(-50%, -50%);
     z-index: 3;
     transition: background-color 0.2s ease;
 }
 
-.dhali-timeline__item.is-active::before {
-    background: var(--dhali-timeline-color);
+.dpl-timeline__item.is-active::before {
+    background: var(--dpl-timeline-color);
 }
 
 /* ---- Mobile: strip the timeline chrome, keep content stacked ----
    The underlying core blocks remain fully valid, editable
    Gutenberg content with the enhancement removed — nothing
-   here touches block markup, only presentation.
-
-   781px matches core Gutenberg's own Columns stacking point
-   (`@media (max-width:781px) .wp-block-columns:not(.is-not-
-   stacked-on-mobile) > .wp-block-column { flex-basis:100% }`),
-   confirmed against the current core/columns stylesheet. This
-   MUST stay in sync with BREAKPOINT in timeline.js, and both
-   should be re-verified against the target Ollie/WP version's
-   actual shipped breakpoint before production use — WordPress
-   does not treat this value as stable across versions and it
-   has changed before. */
-@media (max-width: 781px) {
-    .dhali-timeline::before,
-    .dhali-timeline::after,
-    .dhali-timeline__item::before {
+   here touches block markup, only presentation. */
+@media (max-width: 568px) {
+    .dpl-timeline::before,
+    .dpl-timeline::after,
+    .dpl-timeline__item::before {
         display: none;
     }
 
-    .dhali-timeline__item,
-    .dhali-timeline__item:nth-child(2n) {
+    .dpl-timeline__item,
+    .dpl-timeline__item:nth-child(2n) {
         flex-direction: column;
     }
 }

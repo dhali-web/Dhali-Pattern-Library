@@ -89,7 +89,15 @@
         // and more robust than cancelling pending timers/frames.
         if (mql.matches) return;
 
-        var viewportCenter = window.scrollY + window.innerHeight / 2;
+        // viewportCenter is intentionally viewport-relative (just
+        // innerHeight / 2), NOT window.scrollY + innerHeight / 2.
+        // getBoundingClientRect() below always returns viewport-
+        // relative coordinates that already shift as the page
+        // scrolls, so scrollY must not be added a second time here
+        // — doing so mixes two different coordinate systems and
+        // makes progress increasingly wrong the further the page
+        // is scrolled (this was a real bug, not a hypothetical one).
+        var viewportCenter = window.innerHeight / 2;
         instances.forEach(function (instance) {
             instance.update(viewportCenter);
         });
