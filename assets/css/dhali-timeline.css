@@ -29,15 +29,40 @@
 
 .dhali-timeline {
     /* ---- Design tokens (site-agnostic) ----
-       Colors map to Ollie preset slots per the palette's
-       pairing rules: primary for the active/progress state,
-       border-light for the resting track, border-dark for
-       resting markers (Ollie's existing divider/emphasis
-       role). Override any of these per-site to reskin the
-       component without touching CSS or JS. */
-    --dhali-timeline-color: var(--wp--preset--color--primary);
+       All three colors derive from ONE editor-facing control:
+       this Group block's native Text Color setting (the same
+       "Text" color swatch every Group/Columns block already has
+       in the block sidebar — no custom block, no extra markup,
+       no PHP changes needed to add a color control).
+
+       WordPress writes an editor-picked text color as an inline
+       `style="color:...""` directly on this element, which wins
+       the cascade over the plain-selector default below. CSS's
+       `currentColor` keyword always resolves to whichever color
+       actually won — inline override or this fallback — so every
+       pseudo-element that references currentColor (directly or
+       via color-mix()) updates automatically. To recolor the
+       whole timeline: select the "Scroll Timeline" group in List
+       View and set its Text color.
+
+       If an editor never sets one, this default keeps the
+       original Ollie-token pairing: primary for the active
+       state, and two automatically-muted tints of it for the
+       resting track/marker — nothing to configure out of the box.
+       color-mix() has broad support in current browsers; the
+       plain declarations immediately before each color-mix() line
+       are the fallback for anything that doesn't understand it
+       (a browser skips a declaration it can't parse and keeps the
+       previous one, so order matters — do not remove them). */
+    color: var(--wp--preset--color--primary);
+
+    --dhali-timeline-color: currentColor;
+
     --dhali-timeline-track-color: var(--wp--preset--color--border-light);
+    --dhali-timeline-track-color: color-mix(in srgb, currentColor 18%, transparent);
+
     --dhali-timeline-marker-color: var(--wp--preset--color--border-dark);
+    --dhali-timeline-marker-color: color-mix(in srgb, currentColor 35%, transparent);
 
     /* ---- Component geometry ----
        Implementation mechanics, not editor design decisions,
