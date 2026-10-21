@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/includes/dhali-plugin-updater.php';
+require_once __DIR__ . '/includes/template-part-registry.php';
 Dhali_Plugin_Updater::init( __FILE__, 'dhali-pattern-library', 'master' );
 
 /**
@@ -25,6 +26,9 @@ Dhali_Plugin_Updater::init( __FILE__, 'dhali-pattern-library', 'master' );
  * with the codebase between sites.
  */
 function dhali_enqueue_utility_classes() {
+	if ( ! is_readable( plugin_dir_path( __FILE__ ) . 'assets/css/dhali-classes.css' ) ) {
+		return;
+	}
 	wp_enqueue_style(
 		'dhali-utility-classes',
 		plugin_dir_url( __FILE__ ) . 'assets/css/dhali-classes.css',
@@ -41,6 +45,9 @@ add_action( 'wp_enqueue_scripts', 'dhali_enqueue_utility_classes' );
  * apply a class via the Ollie picker) matches the front end exactly.
  */
 function dhali_enqueue_editor_utility_classes() {
+	if ( ! is_readable( plugin_dir_path( __FILE__ ) . 'assets/css/dhali-classes.css' ) ) {
+		return;
+	}
 	wp_enqueue_style(
 		'dhali-utility-classes-editor',
 		plugin_dir_url( __FILE__ ) . 'assets/css/dhali-classes.css',
