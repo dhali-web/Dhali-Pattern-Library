@@ -13,6 +13,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Make shared native Gutenberg design presets available to every active site.
+require_once __DIR__ . '/includes/design-presets/shadows.php';
+
+
 require_once __DIR__ . '/includes/dhali-plugin-updater.php';
 require_once __DIR__ . '/includes/template-part-registry.php';
 Dhali_Plugin_Updater::init( __FILE__, 'dhali-pattern-library', 'master' );
