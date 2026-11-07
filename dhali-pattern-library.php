@@ -134,6 +134,34 @@ function dhali_enqueue_timeline_editor_assets() {
 add_action( 'enqueue_block_editor_assets', 'dhali_enqueue_timeline_editor_assets' );
 
 /**
+ * Register the Media + Text photo backing/caption stylesheet with core/group.
+ *
+ * Used by dhali-patterns/dhali-media-text-features-offset-photo. Targets only
+ * .dhali-media-text-photo-frame (and its ::before) and
+ * .dhali-media-text-photo-caption. WordPress loads it with core/group on the
+ * front end and in the editor canvas, and inlines it because it is small.
+ */
+function dhali_register_media_text_photo_style() {
+	$relative = 'assets/css/dhali-media-text-photo.css';
+	$path     = plugin_dir_path( __FILE__ ) . $relative;
+
+	if ( ! is_readable( $path ) ) {
+		return;
+	}
+
+	wp_enqueue_block_style(
+		'core/group',
+		array(
+			'handle' => 'dhali-media-text-photo',
+			'src'    => plugin_dir_url( __FILE__ ) . $relative,
+			'path'   => $path,
+			'ver'    => (string) filemtime( $path ),
+		)
+	);
+}
+add_action( 'init', 'dhali_register_media_text_photo_style' );
+
+/**
  * Register custom block patterns and the Dhali pattern category.
  */
 function dhali_register_agency_patterns() {

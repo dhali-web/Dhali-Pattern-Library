@@ -1,0 +1,33 @@
+/*
+ * Dhali Media Text: photo backing + caption overlap.
+ * Used by: dhali-patterns/dhali-media-text-features-offset-photo
+ * Tunable (set on the same block, e.g. via an Ollie Class Manager class):
+ *   .dhali-media-text-photo-frame   --dhali-backing-top, --dhali-backing-left,
+ *                                   --dhali-backing-offset, --dhali-backing-color
+ *   .dhali-media-text-photo-caption --dhali-caption-overhang, --dhali-caption-bottom
+ */
+
+.dhali-media-text-photo-frame {
+	position: relative;
+	isolation: isolate;
+	margin-right: var(--dhali-backing-offset, clamp(0.75rem, 1.5vw, 1.25rem));
+	margin-bottom: var(--dhali-backing-offset, clamp(0.75rem, 1.5vw, 1.25rem));
+}
+
+.dhali-media-text-photo-frame::before {
+	content: "";
+	position: absolute;
+	z-index: -1;
+	top: var(--dhali-backing-top, 38%);
+	left: var(--dhali-backing-left, 32%);
+	right: calc(-1 * var(--dhali-backing-offset, clamp(0.75rem, 1.5vw, 1.25rem)));
+	bottom: calc(-1 * var(--dhali-backing-offset, clamp(0.75rem, 1.5vw, 1.25rem)));
+	background: var(--dhali-backing-color, var(--wp--preset--color--primary-accent));
+	pointer-events: none;
+}
+
+.dhali-media-text-photo-caption {
+	position: absolute;
+	left: calc(-1 * var(--dhali-caption-overhang, clamp(0.5rem, 2vw, 1.75rem)));
+	bottom: var(--dhali-caption-bottom, clamp(1rem, 5%, 1.5rem));
+}
