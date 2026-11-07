@@ -1,6 +1,9 @@
 /*
  * Dhali Media Text: photo backing + caption overlap.
  * Used by: dhali-patterns/dhali-media-text-features-offset-photo
+ * The Media frame Group reserves space for the backing with native margins
+ * (right/bottom: spacing preset "small"). Keep --dhali-backing-offset no larger
+ * than those margins, or raise the margins in the editor when increasing it.
  * Tunable (set on the same block, e.g. via an Ollie Class Manager class):
  *   .dhali-media-text-photo-frame   --dhali-backing-top, --dhali-backing-left,
  *                                   --dhali-backing-offset, --dhali-backing-color
@@ -10,8 +13,6 @@
 .dhali-media-text-photo-frame {
 	position: relative;
 	isolation: isolate;
-	margin-right: var(--dhali-backing-offset, clamp(0.75rem, 1.5vw, 1.25rem));
-	margin-bottom: var(--dhali-backing-offset, clamp(0.75rem, 1.5vw, 1.25rem));
 }
 
 .dhali-media-text-photo-frame::before {
@@ -20,8 +21,8 @@
 	z-index: -1;
 	top: var(--dhali-backing-top, 38%);
 	left: var(--dhali-backing-left, 32%);
-	right: calc(-1 * var(--dhali-backing-offset, clamp(0.75rem, 1.5vw, 1.25rem)));
-	bottom: calc(-1 * var(--dhali-backing-offset, clamp(0.75rem, 1.5vw, 1.25rem)));
+	right: calc(-1 * var(--dhali-backing-offset, var(--wp--preset--spacing--small)));
+	bottom: calc(-1 * var(--dhali-backing-offset, var(--wp--preset--spacing--small)));
 	background: var(--dhali-backing-color, var(--wp--preset--color--primary-accent));
 	pointer-events: none;
 }
@@ -30,4 +31,13 @@
 	position: absolute;
 	left: calc(-1 * var(--dhali-caption-overhang, clamp(0.5rem, 2vw, 1.75rem)));
 	bottom: var(--dhali-caption-bottom, clamp(1rem, 5%, 1.5rem));
+}
+
+/*
+ * Editor canvas only: Core's `.block-editor-block-list__layout
+ * .block-editor-block-list__block { position: relative }` (0,2,0) outranks the
+ * rule above. Same block, no ancestor; the wrapper class exists only in the editor.
+ */
+.dhali-media-text-photo-caption.block-editor-block-list__block {
+	position: absolute;
 }
