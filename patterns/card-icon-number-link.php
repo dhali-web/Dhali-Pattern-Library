@@ -32,7 +32,7 @@ return array(
 
 <!-- wp:buttons -->
 <div class="wp-block-buttons"><!-- wp:button {"textColor":"primary","style":{"color":{"background":"#00000000"},"typography":{"fontWeight":"600"},"spacing":{"padding":{"top":"0","right":"0","bottom":"0","left":"0"}}},"fontSize":"small","icon":"external"} -->
-<div class="wp-block-button has-custom-font-size has-small-font-size"><a class="wp-block-button__link has-primary-color has-text-color has-background wp-element-button" style="background-color:#00000000;padding-top:0;padding-right:0;padding-bottom:0;padding-left:0;font-weight:600">' . esc_html__( 'View details', 'dhali' ) . '</a></div>
+<div class="wp-block-button has-custom-font-size has-small-font-size"><a class="wp-block-button__link has-primary-color has-text-color has-background has-small-font-size has-custom-font-size wp-element-button" style="background-color:#00000000;padding-top:0;padding-right:0;padding-bottom:0;padding-left:0;font-weight:600">' . esc_html__( 'View details', 'dhali' ) . '</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons --></div>
 <!-- /wp:group -->',
