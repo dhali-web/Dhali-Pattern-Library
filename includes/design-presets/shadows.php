@@ -58,6 +58,11 @@ function dhali_pattern_library_add_shadow_presets( $theme_json ) {
 			'slug'   => 'dhali-offset-blue',
 			'shadow' => '16px 16px 0 0 #12648a47',
 		),
+		array(
+			'name'   => __( 'Dhali Soft Blue', 'dhali' ),
+			'slug'   => 'dhali-soft-blue',
+			'shadow' => '0 6px 20px #123d560f',
+		),
 	);
 
 	$added = false;
