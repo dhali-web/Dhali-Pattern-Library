@@ -200,6 +200,10 @@ add_action( 'init', 'dhali_register_agency_patterns' );
  * WordPress will use them automatically without modifying the theme files.
  */
 function dhali_register_block_templates( $query_result, $query_args, $template_type ) {
+	if ( 'wp_template' !== $template_type ) {
+		return $query_result;
+	}
+
 	$template_directory = plugin_dir_path( __FILE__ ) . 'templates/';
 
 	if ( ! is_dir( $template_directory ) ) {
@@ -260,6 +264,10 @@ add_filter( 'get_block_templates', 'dhali_register_block_templates', 10, 3 );
  * Site Editor when a user opens or previews an individual template.
  */
 function dhali_get_block_template( $template, $id, $template_type ) {
+	if ( 'wp_template' !== $template_type ) {
+		return $template;
+	}
+
 	// If WordPress already found a template, respect it.
 	if ( $template ) {
 		return $template;

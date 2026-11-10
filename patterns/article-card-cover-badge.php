@@ -14,9 +14,9 @@ return array(
 <div class="wp-block-group has-base-background-color has-background" style="border-radius:var(--wp--preset--border-radius--lg);box-shadow:var(--wp--preset--shadow--small-light)">
 
 <!-- wp:cover {"url":"' . esc_url( plugin_dir_url( dirname( __FILE__ ) ) . 'assets/images/placeholder-wide-16x9.webp' ) . '","dimRatio":0,"customOverlayColor":"#c8cecf","isUserOverlayColor":true,"minHeight":240,"sizeSlug":"full","contentPosition":"top left","isDark":false,"style":{"border":{"radius":{"topLeft":"var:preset|border-radius|lg","topRight":"var:preset|border-radius|lg","bottomLeft":"0","bottomRight":"0"}}}} -->
-<div class="wp-block-cover has-custom-content-position is-position-top-left is-light" style="min-height:240px;border-top-left-radius:var(--wp--preset--border-radius--lg);border-top-right-radius:var(--wp--preset--border-radius--lg)">
-<span aria-hidden="true" class="wp-block-cover__background has-background-dim-0 has-background-dim" style="background-color:#c8cecf"></span>
+<div class="wp-block-cover is-light has-custom-content-position is-position-top-left" style="border-top-left-radius:var(--wp--preset--border-radius--lg);border-top-right-radius:var(--wp--preset--border-radius--lg);border-bottom-left-radius:0;border-bottom-right-radius:0;min-height:240px">
 <img class="wp-block-cover__image-background size-full" alt="" src="' . esc_url( plugin_dir_url( dirname( __FILE__ ) ) . 'assets/images/placeholder-wide-16x9.webp' ) . '" data-object-fit="cover"/>
+<span aria-hidden="true" class="wp-block-cover__background has-background-dim-0 has-background-dim" style="background-color:#c8cecf"></span>
 <div class="wp-block-cover__inner-container">
 <!-- wp:group {"style":{"spacing":{"margin":{"top":"1.25rem","left":"1.25rem"},"padding":{"top":"0.25rem","right":"0.75rem","bottom":"0.25rem","left":"0.75rem"}},"border":{"radius":"var:preset|border-radius|full"}},"backgroundColor":"primary-accent","layout":{"type":"constrained"}} -->
 <div class="wp-block-group has-primary-accent-background-color has-background" style="margin-top:1.25rem;margin-left:1.25rem;border-radius:var(--wp--preset--border-radius--full);padding-top:0.25rem;padding-right:0.75rem;padding-bottom:0.25rem;padding-left:0.75rem">
