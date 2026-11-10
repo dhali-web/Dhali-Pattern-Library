@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Make shared native Gutenberg design presets available to every active site.
 require_once __DIR__ . '/includes/design-presets/shadows.php';
+require_once __DIR__ . '/includes/design-presets/hover-lift.php';
 
 
 require_once __DIR__ . '/includes/dhali-plugin-updater.php';

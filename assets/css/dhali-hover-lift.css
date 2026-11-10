@@ -1,0 +1,45 @@
+/**
+ * Dhali Lift on Hover: opt-in, 2px vertical translation.
+ * Works with the native block style (is-style-dhali-hover-lift) or with the
+ * composable Additional CSS Class (dhali-hover-lift).
+ */
+
+/* Button: move the actual anchor instead of only its outer div. */
+.wp-block-button:is(.is-style-dhali-hover-lift, .dhali-hover-lift) > .wp-block-button__link {
+    transition: transform 180ms ease, color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.wp-block-button:is(.is-style-dhali-hover-lift, .dhali-hover-lift) > .wp-block-button__link:is(:hover, :focus-visible) {
+    transform: translateY(-2px);
+}
+
+/* Group: useful for Ollie-linked rows/cards; move the whole interactive row. */
+.wp-block-group:is(.is-style-dhali-hover-lift, .dhali-hover-lift) {
+    transition: transform 180ms ease, color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.wp-block-group:is(.is-style-dhali-hover-lift, .dhali-hover-lift):is(:hover, :focus-within) {
+    transform: translateY(-2px);
+}
+
+/* Paragraph: target a text link, not an entire paragraph of copy. */
+p:is(.is-style-dhali-hover-lift, .dhali-hover-lift) a {
+    display: inline-block;
+    transition: transform 180ms ease, color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+p:is(.is-style-dhali-hover-lift, .dhali-hover-lift) a:is(:hover, :focus-visible) {
+    transform: translateY(-2px);
+}
+
+/* Preserve a still, usable interface for visitors who request reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+    .wp-block-button:is(.is-style-dhali-hover-lift, .dhali-hover-lift) > .wp-block-button__link,
+    .wp-block-group:is(.is-style-dhali-hover-lift, .dhali-hover-lift),
+    p:is(.is-style-dhali-hover-lift, .dhali-hover-lift) a {
+        transition: none;
+    }
+
+    .wp-block-button:is(.is-style-dhali-hover-lift, .dhali-hover-lift) > .wp-block-button__link:is(:hover, :focus-visible),
+    .wp-block-group:is(.is-style-dhali-hover-lift, .dhali-hover-lift):is(:hover, :focus-within),
+    p:is(.is-style-dhali-hover-lift, .dhali-hover-lift) a:is(:hover, :focus-visible) {
+        transform: none;
+    }
+}
