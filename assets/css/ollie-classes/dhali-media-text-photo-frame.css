@@ -1,0 +1,14 @@
+position: relative;
+isolation: isolate;
+
+&::before {
+	content: "";
+	position: absolute;
+	z-index: -1;
+	top: var(--dhali-backing-top, 38%);
+	left: var(--dhali-backing-left, 32%);
+	right: calc(-1 * var(--dhali-backing-offset, var(--wp--preset--spacing--small)));
+	bottom: calc(-1 * var(--dhali-backing-offset, var(--wp--preset--spacing--small)));
+	background: var(--dhali-backing-color, var(--wp--preset--color--primary-accent));
+	pointer-events: none;
+}
