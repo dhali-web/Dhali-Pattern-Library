@@ -244,7 +244,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
 		 * ## OPTIONS
 		 * --class=<name>
 		 * : An approved Dhali class name.
-		 * --apply
+		 * [--apply]
 		 * : Confirm the ownership change.
 		 */
 		public function activate( $args, $assoc_args ) {
@@ -260,7 +260,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
 		 * ## OPTIONS
 		 * --class=<name>
 		 * : An approved Dhali class name.
-		 * --apply
+		 * [--apply]
 		 * : Confirm the ownership change.
 		 */
 		public function deactivate( $args, $assoc_args ) {
