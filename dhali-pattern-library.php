@@ -20,6 +20,8 @@ require_once __DIR__ . '/includes/design-presets/hover-lift.php';
 
 require_once __DIR__ . '/includes/dhali-plugin-updater.php';
 require_once __DIR__ . '/includes/template-part-registry.php';
+require_once __DIR__ . '/includes/page-banner-meta.php';
+require_once __DIR__ . '/includes/selectable-templates.php';
 Dhali_Plugin_Updater::init( __FILE__, 'dhali-pattern-library', 'master' );
 
 /**
