@@ -3,8 +3,9 @@
  * Read-only, file-backed FSE template part provider.
  *
  * Canonical source: this plugin's parts/*.html. No database writes occur here.
- * Only names prefixed with `dhali-header-` or `dhali-footer-` are exposed.
- * Existing WordPress theme/database results always take precedence.
+ * Only names prefixed with `dhali-header-`, `dhali-footer-` or
+ * `dhali-sidebar-` are exposed. Existing WordPress theme/database results
+ * always take precedence.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -15,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Determine area from the file slug. An ambiguous filename is ignored.
  *
  * @param string $slug File slug.
- * @return string|null Header/footer area or null.
+ * @return string|null Header/footer/sidebar area or null.
  */
 function dhali_pattern_library_part_area( $slug ) {
 	if ( preg_match( '/^dhali-header-[a-z0-9][a-z0-9-]*$/', $slug ) ) {
@@ -23,6 +24,9 @@ function dhali_pattern_library_part_area( $slug ) {
 	}
 	if ( preg_match( '/^dhali-footer-[a-z0-9][a-z0-9-]*$/', $slug ) ) {
 		return 'footer';
+	}
+	if ( preg_match( '/^dhali-sidebar-[a-z0-9][a-z0-9-]*$/', $slug ) ) {
+		return 'sidebar';
 	}
 	return null;
 }

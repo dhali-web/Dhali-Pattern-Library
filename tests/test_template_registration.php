@@ -92,10 +92,29 @@ dhali_template_test_assert( dhali_get_block_template( null, 'test-theme//not-pre
 
 // The pre-existing plugin template-part callbacks retain their authority.
 $parts = dhali_pattern_library_get_parts( array(), array(), 'wp_template_part' );
-dhali_template_test_assert( count( $parts ) === 3, 'Existing provider still exposes all three parts' );
+dhali_template_test_assert( count( $parts ) === 4, 'Provider exposes the three header/footer parts plus the sidebar part' );
 foreach ( $parts as $part ) {
 	dhali_template_test_assert( $part->type === 'wp_template_part', 'Plugin part type remains unchanged' );
 }
+
+// Sidebar prefix maps to the sidebar area; other names stay ignored.
+dhali_template_test_assert( dhali_pattern_library_part_area( 'dhali-sidebar-contact-card' ) === 'sidebar', 'dhali-sidebar-* maps to sidebar area' );
+dhali_template_test_assert( dhali_pattern_library_part_area( 'dhali-header-x' ) === 'header' && dhali_pattern_library_part_area( 'dhali-footer-x' ) === 'footer', 'Header/footer mapping unchanged' );
+foreach ( array( 'sidebar', 'dhali-sidebar-', 'dhali-sidebar-Bad', 'dhali-aside-x', 'dhali-sidebar_x' ) as $bad_slug ) {
+	dhali_template_test_assert( dhali_pattern_library_part_area( $bad_slug ) === null, "Slug {$bad_slug} ignored" );
+}
+$sidebar_parts = dhali_pattern_library_get_parts( array(), array( 'area' => 'sidebar' ), 'wp_template_part' );
+dhali_template_test_assert( count( $sidebar_parts ) === 1 && $sidebar_parts[0]->slug === 'dhali-sidebar-contact-card', 'Area query returns only the sidebar part' );
+dhali_template_test_assert( $sidebar_parts[0]->area === 'sidebar' && $sidebar_parts[0]->id === 'test-theme//dhali-sidebar-contact-card', 'Sidebar part identity and area' );
+dhali_template_test_assert( trim( $sidebar_parts[0]->content ) === '<!-- wp:pattern {"slug":"dhali-patterns/dhali-card-sidebar-contact"} /-->', 'Sidebar part content is a single card pattern reference' );
+dhali_template_test_assert( count( dhali_pattern_library_get_parts( array(), array( 'area' => 'header' ), 'wp_template_part' ) ) === 2, 'Header area query unaffected by sidebar part' );
+$saved_sidebar = new WP_Block_Template();
+$saved_sidebar->slug = 'dhali-sidebar-contact-card';
+$with_saved = dhali_pattern_library_get_parts( array( $saved_sidebar ), array( 'slug__in' => array( 'dhali-sidebar-contact-card' ) ), 'wp_template_part' );
+dhali_template_test_assert( $with_saved === array( $saved_sidebar ), 'Saved/database sidebar part takes precedence over the file' );
+dhali_template_test_assert( dhali_pattern_library_get_part_file( null, 'test-theme//dhali-sidebar-contact-card', 'wp_template_part' )->area === 'sidebar', 'Direct sidebar part lookup' );
+dhali_template_test_assert( dhali_pattern_library_get_part_file( null, 'test-theme//dhali-sidebar-contact-card', 'wp_template' ) === null, 'Sidebar part never served as a wp_template' );
+dhali_template_test_assert( dhali_register_block_templates( array(), array( 'slug__in' => array( 'dhali-sidebar-contact-card' ) ), 'wp_template' ) === array(), 'Full-template provider does not see the sidebar part' );
 $parts_after_template_provider = dhali_register_block_templates( $parts, array(), 'wp_template_part' );
 dhali_template_test_assert( $parts_after_template_provider === $parts, 'Full-page provider never alters part query' );
 

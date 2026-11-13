@@ -16,6 +16,8 @@ define( 'ABSPATH', __DIR__ . '/' );
 $plugin_dir    = dirname( __DIR__ );
 $template_file = $plugin_dir . '/templates/selectable/dhali-interior-page.html';
 $name          = 'dhali-pattern-library//dhali-interior-page';
+$sidebar_file  = $plugin_dir . '/templates/selectable/dhali-interior-page-sidebar.html';
+$sidebar_name  = 'dhali-pattern-library//dhali-interior-page-sidebar';
 $child         = null;
 foreach ( $argv as $arg ) {
 	if ( 0 === strpos( $arg, '--child=' ) ) {
@@ -57,13 +59,14 @@ if ( 'provider' === $child ) {
 	require $plugin_dir . '/dhali-pattern-library.php';
 
 	$all     = dhali_register_block_templates( array(), array(), 'wp_template' );
-	$by_slug = dhali_register_block_templates( array(), array( 'slug__in' => array( 'dhali-interior-page' ) ), 'wp_template' );
+	$by_slug = dhali_register_block_templates( array(), array( 'slug__in' => array( 'dhali-interior-page', 'dhali-interior-page-sidebar' ) ), 'wp_template' );
 	$single  = dhali_get_block_template( null, 'test-theme//dhali-interior-page', 'wp_template' );
+	$single2 = dhali_get_block_template( null, 'test-theme//dhali-interior-page-sidebar', 'wp_template' );
 	echo json_encode(
 		array(
 			'list_slugs'      => array_map( fn( $t ) => $t->slug, $all ),
 			'slug_query'      => count( $by_slug ),
-			'single_is_null'  => null === $single,
+			'single_is_null'  => null === $single && null === $single2,
 			'module_required' => function_exists( 'dhali_register_selectable_templates' ),
 		)
 	);
@@ -161,14 +164,21 @@ if ( 'provider' !== $child ) {
 	t( 1 === count( $GLOBALS['dhali_test_hooks'] ), 'No other hooks added' );
 	t( 0 === $GLOBALS['dhali_test_calls'], 'Nothing registered at file load' );
 	$defs = dhali_selectable_template_definitions();
-	t( array( $name ) === array_keys( $defs ), 'Exactly one definition: ' . $name );
-	t( ! preg_match( '/[A-Z]/', $name ) && preg_match( '/^[a-z0-9_\-]+\/\/[a-z0-9_\-]+$/', $name ), 'Name is lowercase plugin//slug' );
-	t( array( 'page' ) === $defs[ $name ]['post_types'], 'post_types is exactly [page]' );
-	t( realpath( $defs[ $name ]['file'] ) === realpath( $template_file ), 'Definition points at templates/selectable/dhali-interior-page.html' );
+	t( array( $name, $sidebar_name ) === array_keys( $defs ), 'Exactly two definitions: ' . $name . ', ' . $sidebar_name );
+	foreach ( array( $name => $template_file, $sidebar_name => $sidebar_file ) as $def_name => $def_file ) {
+		t( ! preg_match( '/[A-Z]/', $def_name ) && preg_match( '/^[a-z0-9_\-]+\/\/[a-z0-9_\-]+$/', $def_name ), "{$def_name}: name is lowercase plugin//slug" );
+		t( array( 'page' ) === $defs[ $def_name ]['post_types'], "{$def_name}: post_types is exactly [page]" );
+		t( realpath( $defs[ $def_name ]['file'] ) === realpath( $def_file ), "{$def_name}: definition points at " . basename( $def_file ) );
+	}
 
 	// --- Successful registration via the init hook signature ('' arg). ---
 	$result = dhali_register_selectable_templates( '' );
-	t( array( $name ) === $result, 'Hook call registers the template' );
+	t( array( $name, $sidebar_name ) === $result, 'Hook call registers both templates' );
+	$side = $GLOBALS['dhali_test_registered'][ $sidebar_name ];
+	t( 'test-theme//dhali-interior-page-sidebar' === $side->id && 'dhali-interior-page-sidebar' === $side->slug, 'Sidebar template identity is {stylesheet}//dhali-interior-page-sidebar' );
+	t( 'dhali-pattern-library' === $side->plugin && 'wp_template' === $side->type && array( 'page' ) === $side->post_types, 'Sidebar template: plugin dhali-pattern-library, wp_template, Pages only' );
+	t( 'Interior Page with Sidebar' === $side->title, 'Sidebar template title is Interior Page with Sidebar' );
+	t( file_get_contents( $sidebar_file ) === $side->content, 'Sidebar template content is the source file, unmodified' );
 	$tpl = $GLOBALS['dhali_test_registered'][ $name ];
 	t( 'test-theme//dhali-interior-page' === $tpl->id, 'Template identity is {stylesheet}//dhali-interior-page' );
 	t( 'dhali-pattern-library' === $tpl->plugin && 'plugin' === $tpl->source, 'Plugin association dhali-pattern-library, source plugin' );
@@ -203,17 +213,36 @@ if ( 'provider' !== $child ) {
 	t( 0 === $code && array() === $json, 'Without register_block_template: no-op, no fatal (' . trim( $raw ) . ')' );
 
 	// --- Existing hierarchy provider does not serve the selectable template. ---
-	t( ! in_array( realpath( $template_file ), array_map( 'realpath', glob( $plugin_dir . '/templates/*.html' ) ), true ), 'File is outside the top-level templates/*.html glob' );
-	t( ! file_exists( $plugin_dir . '/templates/dhali-interior-page.html' ), 'No top-level templates/dhali-interior-page.html for the slug lookup' );
+	$top_level = array_map( 'realpath', glob( $plugin_dir . '/templates/*.html' ) );
+	foreach ( array( $template_file, $sidebar_file ) as $f ) {
+		t( ! in_array( realpath( $f ), $top_level, true ), basename( $f ) . ' is outside the top-level templates/*.html glob' );
+		t( ! file_exists( $plugin_dir . '/templates/' . basename( $f ) ), 'No top-level templates/' . basename( $f ) . ' for the slug lookup' );
+	}
 	list( $code, $json, $raw ) = child( 'provider' );
 	t( 0 === $code && is_array( $json ), 'Provider child ran (' . substr( $raw, 0, 200 ) . ')' );
-	t( ! in_array( 'dhali-interior-page', $json['list_slugs'], true ), 'Provider list excludes dhali-interior-page (lists: ' . implode( ',', $json['list_slugs'] ) . ')' );
-	t( 0 === $json['slug_query'], 'Provider slug__in query returns nothing for dhali-interior-page' );
-	t( true === $json['single_is_null'], 'Provider single lookup returns null for dhali-interior-page' );
+	t( ! array_intersect( array( 'dhali-interior-page', 'dhali-interior-page-sidebar' ), $json['list_slugs'] ), 'Provider list excludes both selectable templates (lists: ' . implode( ',', $json['list_slugs'] ) . ')' );
+	t( 0 === $json['slug_query'], 'Provider slug__in query returns nothing for the selectable templates' );
+	t( true === $json['single_is_null'], 'Provider single lookups return null for the selectable templates' );
 	t( true === $json['module_required'], 'Plugin bootstrap loads the selectable-template module' );
 
-	// --- Template markup. ---
-	$html = file_get_contents( $template_file );
+	// --- Template markup (run for each selectable template). ---
+	$expect = array( 'core/heading' => 'dhali_banner_headline', 'core/paragraph' => 'dhali_banner_intro' );
+	$header = array( 'slug' => 'dhali-header-utility-bar-logo-nav-cta', 'theme' => 'ollie', 'area' => 'header' );
+	$footer = array( 'slug' => 'dhali-footer-brand-links-legal', 'theme' => 'ollie', 'area' => 'footer' );
+	$sidebar_part = array( 'slug' => 'dhali-sidebar-contact-card', 'theme' => 'ollie', 'tagName' => 'aside', 'area' => 'sidebar' );
+	$suites = array(
+		$template_file => array(
+			'allowed' => array( 'core/template-part', 'core/group', 'create-block/dhali-breadcrumbs', 'core/post-title', 'core/heading', 'core/paragraph', 'core/post-content' ),
+			'parts'   => array( $header, $footer ),
+		),
+		$sidebar_file  => array(
+			'allowed' => array( 'core/template-part', 'core/group', 'create-block/dhali-breadcrumbs', 'core/post-title', 'core/heading', 'core/paragraph', 'core/post-content', 'core/columns', 'core/column' ),
+			'parts'   => array( $header, $sidebar_part, $footer ),
+		),
+	);
+	foreach ( $suites as $suite_file => $suite ) {
+	$label = basename( $suite_file ) . ': ';
+	$html  = file_get_contents( $suite_file );
 	preg_match_all( '/<!--\s+(\/)?wp:([a-z0-9-]+(?:\/[a-z0-9-]+)?)(?:\s+(\{.*?\}))?\s*(\/)?-->/s', $html, $m, PREG_SET_ORDER );
 	$blocks = array();
 	$depth  = 0;
@@ -237,35 +266,51 @@ if ( 'provider' !== $child ) {
 	$count = function ( $n, $filter = null ) use ( $blocks ) {
 		return count( array_filter( $blocks, fn( $b ) => $b['name'] === $n && ( ! $filter || $filter( $b['attrs'] ) ) ) );
 	};
-	$allowed = array( 'core/template-part', 'core/group', 'create-block/dhali-breadcrumbs', 'core/post-title', 'core/heading', 'core/paragraph', 'core/post-content' );
-	$unexpected = array_diff( array_unique( array_column( $blocks, 'name' ) ), $allowed );
-	t( array() === $unexpected, 'Only expected blocks used (' . implode( ', ', array_unique( array_column( $blocks, 'name' ) ) ) . ')' );
+	$unexpected = array_diff( array_unique( array_column( $blocks, 'name' ) ), $suite['allowed'] );
+	t( array() === $unexpected, $label . 'Only expected blocks used (' . implode( ', ', array_unique( array_column( $blocks, 'name' ) ) ) . ')' );
 
 	$parts = array_values( array_filter( $blocks, fn( $b ) => 'core/template-part' === $b['name'] ) );
-	t( 2 === count( $parts ), 'Exactly two template parts' );
-	t( array( 'slug' => 'dhali-header-utility-bar-logo-nav-cta', 'theme' => 'ollie', 'area' => 'header' ) === $parts[0]['attrs'], 'First part is the Dhali header (ollie, header)' );
-	t( array( 'slug' => 'dhali-footer-brand-links-legal', 'theme' => 'ollie', 'area' => 'footer' ) === $parts[1]['attrs'], 'Last part is the Dhali footer (ollie, footer)' );
-	t( file_exists( $plugin_dir . '/parts/dhali-header-utility-bar-logo-nav-cta.html' ) && file_exists( $plugin_dir . '/parts/dhali-footer-brand-links-legal.html' ), 'Referenced header/footer sources exist in parts/' );
-	t( 'core/template-part' === $blocks[0]['name'] && 'core/template-part' === end( $blocks )['name'], 'Header first, footer last' );
+	t( count( $suite['parts'] ) === count( $parts ), $label . 'Exactly ' . count( $suite['parts'] ) . ' template parts' );
+	foreach ( $suite['parts'] as $i => $want ) {
+		t( $want === $parts[ $i ]['attrs'], $label . "Part {$i} is {$want['slug']} ({$want['area']})" );
+		t( file_exists( $plugin_dir . '/parts/' . $want['slug'] . '.html' ), $label . "Referenced part source parts/{$want['slug']}.html exists" );
+	}
+	t( 'core/template-part' === $blocks[0]['name'] && 'core/template-part' === end( $blocks )['name'], $label . 'Header first, footer last' );
 
-	t( 1 === $count( 'create-block/dhali-breadcrumbs' ), 'Exactly one Dhali Breadcrumbs block' );
-	t( 1 === $count( 'core/post-content' ), 'Exactly one core/post-content' );
-	t( 1 === $count( 'core/heading', fn( $a ) => 1 === ( $a['level'] ?? 2 ) ), 'Exactly one H1 heading block' );
-	t( 1 === preg_match_all( '/<h1\b/', $html ), 'Exactly one <h1> in saved markup' );
-	t( 1 === $count( 'core/post-title' ) && 0 === $count( 'core/post-title', fn( $a ) => ( $a['level'] ?? 2 ) > 0 ), 'One post-title rendered as <p> (level 0), not a heading' );
-	t( 1 === $count( 'core/group', fn( $a ) => 'main' === ( $a['tagName'] ?? '' ) ), 'One <main> group' );
-	t( 0 === preg_match( '/Racers|Records|record archive/i', $html ), 'No Records page copy baked into the template' );
+	t( 1 === $count( 'create-block/dhali-breadcrumbs' ), $label . 'Exactly one Dhali Breadcrumbs block' );
+	t( 1 === $count( 'core/post-content' ), $label . 'Exactly one core/post-content' );
+	t( 1 === $count( 'core/heading', fn( $a ) => 1 === ( $a['level'] ?? 2 ) ), $label . 'Exactly one H1 heading block' );
+	t( 1 === preg_match_all( '/<h1\b/', $html ), $label . 'Exactly one <h1> in saved markup' );
+	t( 1 === $count( 'core/post-title' ) && 0 === $count( 'core/post-title', fn( $a ) => ( $a['level'] ?? 2 ) > 0 ), $label . 'One post-title rendered as <p> (level 0), not a heading' );
+	t( 1 === $count( 'core/group', fn( $a ) => 'main' === ( $a['tagName'] ?? '' ) ), $label . 'One <main> group' );
+	t( 0 === preg_match( '/Racers|Records|record archive|tryout|LASC|@/i', $html ), $label . 'No Page-specific copy or contact data baked into the template' );
 
 	$bound = array_values( array_filter( $blocks, fn( $b ) => isset( $b['attrs']['metadata']['bindings'] ) ) );
-	t( 2 === count( $bound ), 'Exactly two bound blocks' );
-	$expect = array( 'core/heading' => 'dhali_banner_headline', 'core/paragraph' => 'dhali_banner_intro' );
+	t( 2 === count( $bound ), $label . 'Exactly two bound blocks' );
 	foreach ( $bound as $b ) {
 		$bindings = $b['attrs']['metadata']['bindings'];
-		t( array( 'content' ) === array_keys( $bindings ), "{$b['name']} binds only content" );
-		t( 'core/post-meta' === $bindings['content']['source'], "{$b['name']} uses core/post-meta" );
-		t( isset( $expect[ $b['name'] ] ) && array( 'key' => $expect[ $b['name'] ] ) === $bindings['content']['args'], "{$b['name']} bound to {$expect[ $b['name'] ]}" );
+		t( array( 'content' ) === array_keys( $bindings ), $label . "{$b['name']} binds only content" );
+		t( 'core/post-meta' === $bindings['content']['source'], $label . "{$b['name']} uses core/post-meta" );
+		t( isset( $expect[ $b['name'] ] ) && array( 'key' => $expect[ $b['name'] ] ) === $bindings['content']['args'], $label . "{$b['name']} bound to {$expect[ $b['name'] ]}" );
 	}
-	t( 1 === ( $bound[0]['attrs']['level'] ?? null ), 'The bound heading is the H1' );
+	t( 1 === ( $bound[0]['attrs']['level'] ?? null ), $label . 'The bound heading is the H1' );
+
+	if ( $suite_file === $sidebar_file ) {
+		// post-content and the sidebar part sit in sibling columns of one columns block.
+		$cols = array_values( array_filter( $blocks, fn( $b ) => 'core/column' === $b['name'] ) );
+		t( 1 === $count( 'core/columns' ) && 2 === count( $cols ), $label . 'One columns block with two columns' );
+		t( '66.66%' === ( $cols[0]['attrs']['width'] ?? '' ) && '33.33%' === ( $cols[1]['attrs']['width'] ?? '' ), $label . 'Column widths 66.66% / 33.33%' );
+		$names = array_column( $blocks, 'name' );
+		$pc    = array_search( 'core/post-content', $names, true );
+		$sp    = array_search( $sidebar_part, array_column( $blocks, 'attrs' ), true );
+		t( false !== $pc && false !== $sp && $pc < $sp && $blocks[ $pc ]['depth'] === $blocks[ $sp ]['depth'], $label . 'post-content precedes the sidebar part, at the same column depth' );
+		t( 1 === substr_count( $html, 'dhali-sidebar-contact-card' ) && false === strpos( $html, 'dhali-card-sidebar-contact' ), $label . 'Sidebar card appears once, only via its template part' );
+	}
+	}
+
+	// --- Sidebar template part source. ---
+	t( '<!-- wp:pattern {"slug":"dhali-patterns/dhali-card-sidebar-contact"} /-->' === trim( file_get_contents( $plugin_dir . '/parts/dhali-sidebar-contact-card.html' ) ), 'Sidebar part is a single reference to the card pattern' );
+	t( file_exists( $plugin_dir . '/patterns/dhali-card-sidebar-contact.php' ), 'Referenced card pattern source exists' );
 
 	// Keys match the Stage 1 metadata module.
 	function register_post_meta() {}

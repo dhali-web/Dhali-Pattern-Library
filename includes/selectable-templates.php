@@ -33,6 +33,12 @@ function dhali_selectable_template_definitions() {
 			'description' => __( 'Shared header and footer, a gradient banner with breadcrumbs, the Page title as eyebrow, a per-Page headline and introduction (Page banner fields), then the Page content.', 'Dhali-Pattern-Library' ),
 			'post_types'  => array( 'page' ),
 		),
+		'dhali-pattern-library//dhali-interior-page-sidebar' => array(
+			'file'        => dirname( __DIR__ ) . '/templates/selectable/dhali-interior-page-sidebar.html',
+			'title'       => __( 'Interior Page with Sidebar', 'Dhali-Pattern-Library' ),
+			'description' => __( 'The Interior Page header, banner and footer, with the Page content in a main column beside the shared Sidebar Contact Card template part.', 'Dhali-Pattern-Library' ),
+			'post_types'  => array( 'page' ),
+		),
 	);
 }
 
