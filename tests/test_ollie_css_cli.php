@@ -85,7 +85,7 @@ namespace {
 	$cmd->import( array(), array() );
 	test_assert( $original === get_option( 'ollie_pro_css_classes' ), 'Dry run preserves all class records' );
 	test_assert( 0 === $GLOBALS['dhali_test_writes'] && 0 === $GLOBALS['dhali_test_rest'], 'Dry run never writes' );
-	test_assert( 2 === count( WP_CLI::$output ), 'Dry run reports two classes' );
+	test_assert( 3 === count( WP_CLI::$output ), 'Dry run reports three classes' );
 	test_assert( false !== strpos( WP_CLI::$output[0], 'empty' ), 'Existing empty record classified' );
 	test_assert( false !== strpos( WP_CLI::$output[1], 'missing' ), 'Missing record classified' );
 
@@ -97,11 +97,12 @@ namespace {
 	$GLOBALS['dhali_test_admin'] = true;
 	$cmd->import( array(), array( 'apply' => true ) );
 	$classes = get_option( 'ollie_pro_css_classes' );
-	test_assert( 2 === $GLOBALS['dhali_test_rest'], 'Only approved missing/empty classes imported' );
+	test_assert( 3 === $GLOBALS['dhali_test_rest'], 'Only approved missing/empty classes imported' );
 	test_assert( $classes['site-owned-card'] === $original['site-owned-card'], 'Unrelated record untouched' );
 	test_assert( $classes['dhali-media-text-photo-frame']['usage'] === array( 249 ), 'Existing usage preserved by Ollie save handler' );
 	test_assert( true === $classes['dhali-media-text-photo-caption']['loadGlobal'], 'Global class loading provisioned' );
-	test_assert( 2 === count( get_option( 'dhali_ollie_css_imports' ) ), 'Import metadata recorded' );
+	test_assert( true === $classes['dhali-sidebar-sticky-container']['loadGlobal'], 'Sticky sidebar registered for Ollie global loading' );
+	test_assert( 3 === count( get_option( 'dhali_ollie_css_imports' ) ), 'Import metadata recorded' );
 	test_assert( ! isset( get_option( 'dhali_ollie_css_ownership', array() )['dhali-media-text-photo-frame'] ), 'Import does not set Dhali ownership' );
 
 	$rest_before = $GLOBALS['dhali_test_rest'];

@@ -18,5 +18,8 @@ function dhali_ollie_css_registry() {
 		'dhali-media-text-photo-caption' => array(
 			'file' => 'assets/css/ollie-classes/dhali-media-text-photo-caption.css',
 		),
+		'dhali-sidebar-sticky-container' => array(
+			'file' => 'assets/css/ollie-classes/dhali-sidebar-sticky-container.css',
+		),
 	);
 }

@@ -1,0 +1,16 @@
+/* Attach this class to the sidebar Column in Interior Page with Sidebar. */
+& > .wp-block-template-part {
+	position: sticky;
+	top: calc(var(--wp-admin--admin-bar--height, 0px) + 24px);
+	align-self: flex-start;
+	z-index: 2;
+}
+
+/* Core Columns stack below 782px: keep the sidebar in normal flow. */
+@media (max-width: 781px) {
+	& > .wp-block-template-part {
+		position: static;
+		top: auto;
+		align-self: auto;
+	}
+}

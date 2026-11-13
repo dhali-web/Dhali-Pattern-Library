@@ -42,12 +42,15 @@ namespace {
 	require __DIR__ . '/../includes/ollie-css/bootstrap.php';
 	$registry = dhali_ollie_css_registry();
 	$names    = array_keys( $registry );
-	test_assert( $names === array( 'dhali-media-text-photo-frame', 'dhali-media-text-photo-caption' ), 'Exactly two approved classes' );
+	test_assert( $names === array( 'dhali-media-text-photo-frame', 'dhali-media-text-photo-caption', 'dhali-sidebar-sticky-container' ), 'Exactly three approved classes' );
 	test_assert( isset( $GLOBALS['dhali_test_actions']['enqueue_block_assets'] ), 'Block-content asset hook exists' );
 	test_assert( count( $GLOBALS['dhali_test_actions']['enqueue_block_assets'] ) === 1, 'Fallback is only hooked once' );
 
 	$frame   = dhali_ollie_css_source( $names[0] );
 	$caption = dhali_ollie_css_source( $names[1] );
+	$sticky  = dhali_ollie_css_source( $names[2] );
+	test_assert( is_string( $sticky ) && false !== strpos( $sticky, '& > .wp-block-template-part' ), 'Sticky Column targets its immediate template part' );
+	test_assert( false !== strpos( $sticky, 'position: sticky;' ) && false !== strpos( $sticky, 'max-width: 781px' ), 'Sticky CSS and stacked layout fallback present' );
 	test_assert( is_string( $frame ) && is_string( $caption ), 'Class fragments exist and load' );
 	test_assert( false !== strpos( $frame, '&::before' ), 'Nested frame pseudo-element retained' );
 	test_assert( false !== strpos( $frame, 'position: relative;' ), 'Frame positioning retained' );
@@ -74,6 +77,7 @@ namespace {
 	$full_fallback = dhali_ollie_css_build_fallback( array(), array(), false );
 	test_assert( false !== strpos( $full_fallback, '.dhali-media-text-photo-frame {' ), 'Frame fallback generated' );
 	test_assert( false !== strpos( $full_fallback, '.dhali-media-text-photo-caption {' ), 'Caption fallback generated' );
+	test_assert( false !== strpos( $full_fallback, '.dhali-sidebar-sticky-container {' ), 'Sticky sidebar fallback generated' );
 	test_assert( false !== strpos( $full_fallback, '.dhali-media-text-photo-caption.block-editor-block-list__block {' ), 'Editor caption fix preserved' );
 	test_assert( false !== strpos( $full_fallback, '&::before {' ), 'Nested pseudo-element in fallback' );
 
@@ -82,6 +86,7 @@ namespace {
 	$frame_managed = dhali_ollie_css_build_fallback( array( $names[0] => $frame_record ), $owned, true );
 	test_assert( false === strpos( $frame_managed, '.dhali-media-text-photo-frame {' ), 'Managed frame fallback suppressed' );
 	test_assert( false !== strpos( $frame_managed, '.dhali-media-text-photo-caption {' ), 'Caption fallback retained when frame managed' );
+	test_assert( false !== strpos( $frame_managed, '.dhali-sidebar-sticky-container {' ), 'Sticky fallback remains when frame managed' );
 	test_assert( false !== strpos( $frame_managed, '.dhali-media-text-photo-caption.block-editor-block-list__block {' ), 'Editor caption fix retained' );
 
 	$record_not_global = $frame_record;
