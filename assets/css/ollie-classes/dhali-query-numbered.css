@@ -1,0 +1,17 @@
+/* Attach this class to the Post Template of the "Query – Numbered Image Card" design.
+ * Each Post Template resets its own counter, so separate Query Loops never share numbers.
+ * The number is presentational: it follows the rendered query order (01, 02, 03…).
+ * The dhali-query-number hook sits on the Number Rail group (not an empty paragraph, which
+ * the editor hides in Query Loop previews). Font, size, weight and color come from that
+ * group's native typography and color settings; only placement is set here. */
+counter-reset: dhali-query-number;
+
+& > .wp-block-post {
+	counter-increment: dhali-query-number;
+}
+
+& .dhali-query-number::before {
+	content: counter(dhali-query-number, decimal-leading-zero);
+	display: block;
+	text-align: center;
+}

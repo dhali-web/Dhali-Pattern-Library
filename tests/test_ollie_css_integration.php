@@ -42,7 +42,7 @@ namespace {
 	require __DIR__ . '/../includes/ollie-css/bootstrap.php';
 	$registry = dhali_ollie_css_registry();
 	$names    = array_keys( $registry );
-	test_assert( $names === array( 'dhali-media-text-photo-frame', 'dhali-media-text-photo-caption', 'dhali-sidebar-sticky-container' ), 'Exactly three approved classes' );
+	test_assert( $names === array( 'dhali-media-text-photo-frame', 'dhali-media-text-photo-caption', 'dhali-sidebar-sticky-container', 'dhali-query-numbered', 'dhali-term-chips' ), 'Exactly five approved classes' );
 	test_assert( isset( $GLOBALS['dhali_test_actions']['enqueue_block_assets'] ), 'Block-content asset hook exists' );
 	test_assert( count( $GLOBALS['dhali_test_actions']['enqueue_block_assets'] ) === 1, 'Fallback is only hooked once' );
 
@@ -55,6 +55,22 @@ namespace {
 	test_assert( false !== strpos( $frame, '&::before' ), 'Nested frame pseudo-element retained' );
 	test_assert( false !== strpos( $frame, 'position: relative;' ), 'Frame positioning retained' );
 	test_assert( false !== strpos( $caption, 'position: absolute;' ), 'Caption positioning retained' );
+
+	$numbered = dhali_ollie_css_source( $names[3] );
+	$chips    = dhali_ollie_css_source( $names[4] );
+	test_assert( is_string( $numbered ) && is_string( $chips ), 'Query numbering and term chip fragments exist and load' );
+	test_assert( 0 === strpos( trim( preg_replace( '#/\*.*?\*/#s', '', $numbered ) ), 'counter-reset: dhali-query-number;' ), 'Counter resets on the Post Template itself (per-loop scope)' );
+	test_assert( false !== strpos( $numbered, '& > .wp-block-post {' ) && false !== strpos( $numbered, 'counter-increment: dhali-query-number;' ), 'Counter increments only on direct post items' );
+	test_assert( false !== strpos( $numbered, '& .dhali-query-number::before {' ) && false !== strpos( $numbered, 'counter(dhali-query-number, decimal-leading-zero)' ), 'Zero-padded number rendered in the rail hook' );
+	test_assert( false !== strpos( $numbered, 'display: block;' ) && false !== strpos( $numbered, 'text-align: center;' ), 'Rail number is centred as a block pseudo-element' );
+	$numbered_rules = preg_replace( '#/\*.*?\*/#s', '', $numbered );
+	test_assert( false === strpos( $numbered_rules, ':empty' ) && false === strpos( $numbered_rules, 'data-empty' ) && false === strpos( $numbered_rules, 'block-preview' ), 'Numbering does not depend on empty-paragraph state or override editor preview rules' );
+	test_assert( false === strpos( $numbered_rules, 'font-' ) && false === strpos( $numbered_rules, 'color' ), 'Number typography and color stay with the native rail group settings' );
+	test_assert( false !== strpos( $chips, 'flex-wrap: wrap;' ) && false !== strpos( $chips, '& .wp-block-post-terms__separator {' ), 'Chips wrap and hide separators' );
+	test_assert( false !== strpos( $chips, 'var(--wp--preset--color--primary-alt-accent)' ) && false === strpos( $chips, 'border-radius' ), 'Chips use the tint preset with square corners' );
+	foreach ( array( $numbered, $chips ) as $fragment ) {
+		test_assert( false === strpos( $fragment, '!important' ) && false === strpos( $fragment, '@import' ), 'New fragments avoid !important and @import' );
+	}
 
 	$legacy = file_get_contents( __DIR__ . '/../assets/css/dhali-media-text-photo.css' );
 	foreach ( array(
@@ -78,6 +94,8 @@ namespace {
 	test_assert( false !== strpos( $full_fallback, '.dhali-media-text-photo-frame {' ), 'Frame fallback generated' );
 	test_assert( false !== strpos( $full_fallback, '.dhali-media-text-photo-caption {' ), 'Caption fallback generated' );
 	test_assert( false !== strpos( $full_fallback, '.dhali-sidebar-sticky-container {' ), 'Sticky sidebar fallback generated' );
+	test_assert( false !== strpos( $full_fallback, '.dhali-query-numbered {' ), 'Query numbering fallback generated' );
+	test_assert( false !== strpos( $full_fallback, '.dhali-term-chips {' ), 'Term chips fallback generated' );
 	test_assert( false !== strpos( $full_fallback, '.dhali-media-text-photo-caption.block-editor-block-list__block {' ), 'Editor caption fix preserved' );
 	test_assert( false !== strpos( $full_fallback, '&::before {' ), 'Nested pseudo-element in fallback' );
 
@@ -87,6 +105,13 @@ namespace {
 	test_assert( false === strpos( $frame_managed, '.dhali-media-text-photo-frame {' ), 'Managed frame fallback suppressed' );
 	test_assert( false !== strpos( $frame_managed, '.dhali-media-text-photo-caption {' ), 'Caption fallback retained when frame managed' );
 	test_assert( false !== strpos( $frame_managed, '.dhali-sidebar-sticky-container {' ), 'Sticky fallback remains when frame managed' );
+	test_assert( false !== strpos( $frame_managed, '.dhali-query-numbered {' ) && false !== strpos( $frame_managed, '.dhali-term-chips {' ), 'Query fallbacks remain when frame managed' );
+
+	$chips_record  = array( 'css' => $chips, 'loadGlobal' => true );
+	$chips_managed = dhali_ollie_css_build_fallback( array( $names[4] => $chips_record ), array( $names[4] => array( 'active' => true ) ), true );
+	test_assert( false === strpos( $chips_managed, '.dhali-term-chips {' ), 'Managed chips fallback suppressed' );
+	test_assert( false !== strpos( $chips_managed, '.dhali-query-numbered {' ), 'Numbering fallback retained when chips managed' );
+	test_assert( ! dhali_ollie_css_is_managed( $names[3], array( 'css' => $numbered, 'loadGlobal' => true ), array(), true ), 'Unactivated numbering record uses fallback' );
 	test_assert( false !== strpos( $frame_managed, '.dhali-media-text-photo-caption.block-editor-block-list__block {' ), 'Editor caption fix retained' );
 
 	$record_not_global = $frame_record;

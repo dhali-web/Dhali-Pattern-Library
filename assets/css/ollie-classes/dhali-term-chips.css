@@ -1,0 +1,18 @@
+/* Attach this class to a Post Terms block to show each term as a square, tinted chip.
+ * Font size stays with the block's native typography control. */
+display: flex;
+flex-wrap: wrap;
+gap: var(--wp--preset--spacing--20);
+
+& .wp-block-post-terms__separator {
+	display: none;
+}
+
+& a {
+	padding: var(--wp--preset--spacing--20) var(--wp--preset--spacing--30);
+	background-color: var(--wp--preset--color--primary-alt-accent);
+	color: var(--wp--preset--color--primary);
+	font-weight: 700;
+	line-height: 1.4;
+	text-decoration: none;
+}

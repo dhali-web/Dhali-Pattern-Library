@@ -21,5 +21,11 @@ function dhali_ollie_css_registry() {
 		'dhali-sidebar-sticky-container' => array(
 			'file' => 'assets/css/ollie-classes/dhali-sidebar-sticky-container.css',
 		),
+		'dhali-query-numbered'           => array(
+			'file' => 'assets/css/ollie-classes/dhali-query-numbered.css',
+		),
+		'dhali-term-chips'               => array(
+			'file' => 'assets/css/ollie-classes/dhali-term-chips.css',
+		),
 	);
 }
