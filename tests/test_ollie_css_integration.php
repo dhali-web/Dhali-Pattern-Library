@@ -33,6 +33,10 @@ namespace {
 	function wp_add_inline_style( $name, $css ) {
 		$GLOBALS['dhali_test_styles']['inline'][ $name ] = $css;
 	}
+	$GLOBALS['dhali_test_is_admin'] = false;
+	function is_admin() {
+		return $GLOBALS['dhali_test_is_admin'];
+	}
 	function test_assert( $condition, $message ) {
 		if ( ! $condition ) {
 			throw new \RuntimeException( $message );
@@ -149,11 +153,37 @@ namespace {
 	test_assert( dhali_ollie_css_classify( $names[0], $records, array() ) === 'customized', 'Untracked nonempty CSS protected' );
 	test_assert( dhali_ollie_css_classify( $names[0], $records, array( $names[0] => array( 'import_hash' => 'test' ) ) ) === 'edited', 'Imported edit detected' );
 
+	// Editor context: unmanaged output is identical; managed classes mirror Ollie's frontend rules.
+	test_assert( dhali_ollie_css_build_fallback( array(), array(), false, 'editor' ) === $full_fallback, 'Unmanaged classes render identically in editor and frontend' );
+	test_assert( dhali_ollie_css_build_fallback( array( $names[0] => $frame_record ), $owned, true, 'frontend' ) === $frame_managed, 'Frontend is the default context' );
+	$frame_editor = dhali_ollie_css_build_fallback( array( $names[0] => $frame_record ), $owned, true, 'editor' );
+	test_assert( 1 === substr_count( $frame_editor, '.dhali-media-text-photo-frame {' ) && false !== strpos( $frame_editor, ".dhali-media-text-photo-frame {\n" . $frame . "\n}" ), 'Managed class still styles the editor exactly once' );
+	$edited_record = array( 'css' => str_replace( '32%', '12%', $frame ), 'hoverCss' => 'opacity: 0.9;', 'loadGlobal' => true );
+	$edited_editor = dhali_ollie_css_build_fallback( array( $names[0] => $edited_record ), $owned, true, 'editor' );
+	test_assert( false !== strpos( $edited_editor, 'var(--dhali-backing-left, 12%)' ) && false === strpos( $edited_editor, 'var(--dhali-backing-left, 32%)' ), 'Editor mirrors the Ollie record the frontend actually prints' );
+	test_assert( false !== strpos( $edited_editor, ".dhali-media-text-photo-frame:hover {\nopacity: 0.9;\n}" ), 'Editor mirrors Ollie state CSS with the same selector' );
+	test_assert( false === strpos( dhali_ollie_css_build_fallback( array( $names[0] => $edited_record ), $owned, true, 'frontend' ), '.dhali-media-text-photo-frame' ), 'Frontend never duplicates a managed class' );
+	$caption_owned  = array( $names[1] => array( 'active' => true ) );
+	$caption_record = array( $names[1] => array( 'css' => $caption, 'loadGlobal' => true ) );
+	test_assert( false !== strpos( dhali_ollie_css_build_fallback( $caption_record, $caption_owned, true, 'editor' ), '.dhali-media-text-photo-caption.block-editor-block-list__block {' ), 'Editor caption fix survives caption activation' );
+	test_assert( false === strpos( dhali_ollie_css_build_fallback( $caption_record, $caption_owned, true, 'frontend' ), '.dhali-media-text-photo-caption' ), 'Managed caption absent from frontend fallback' );
+	test_assert( dhali_ollie_css_build_fallback( array( $names[0] => $frame_record ), $owned, false, 'editor' ) === $full_fallback, 'Missing vendor keeps the canonical fragment in the editor' );
+
 	$GLOBALS['dhali_test_options']['ollie_pro_css_classes']  = array();
 	$GLOBALS['dhali_test_options']['dhali_ollie_css_ownership'] = array();
 	dhali_ollie_css_enqueue_fallback();
 	test_assert( isset( $GLOBALS['dhali_test_styles']['enqueued'][0] ), 'Fallback enqueued' );
 	test_assert( $GLOBALS['dhali_test_styles']['inline']['dhali-ollie-css-fallback'] === $full_fallback, 'Enqueued CSS matches the pure builder' );
+
+	// Enqueue chooses the context from is_admin().
+	$GLOBALS['dhali_test_options']['ollie_pro_css_classes']     = array( $names[0] => $frame_record );
+	$GLOBALS['dhali_test_options']['dhali_ollie_css_ownership'] = $owned;
+	dhali_ollie_css_enqueue_fallback();
+	test_assert( $GLOBALS['dhali_test_styles']['inline']['dhali-ollie-css-fallback'] === $frame_managed, 'Frontend enqueue omits managed classes' );
+	$GLOBALS['dhali_test_is_admin'] = true;
+	dhali_ollie_css_enqueue_fallback();
+	test_assert( $GLOBALS['dhali_test_styles']['inline']['dhali-ollie-css-fallback'] === $frame_editor, 'Editor enqueue mirrors managed classes' );
+	$GLOBALS['dhali_test_is_admin'] = false;
 
 	echo "PASS Ollie CSS registry, fallback, ownership, and classification\n";
 }

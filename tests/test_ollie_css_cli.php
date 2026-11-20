@@ -111,8 +111,35 @@ namespace {
 	$cmd->import( array(), array( 'apply' => true ) );
 	test_assert( $GLOBALS['dhali_test_rest'] === $rest_before, 'Second import is idempotent' );
 
+	$drifted = get_option( 'ollie_pro_css_classes' );
+	$saved_frame = $drifted['dhali-media-text-photo-frame'];
+	$drifted['dhali-media-text-photo-frame']['css'] = str_replace( '32%', '12%', $saved_frame['css'] );
+	$GLOBALS['dhali_test_options']['ollie_pro_css_classes'] = $drifted;
+	$blocked = false;
+	try { $cmd->activate( array(), array( 'class' => 'dhali-media-text-photo-frame', 'apply' => true ) ); }
+	catch ( \RuntimeException $e ) { $blocked = false !== strpos( $e->getMessage(), 'differs from the Dhali registry' ); }
+	test_assert( $blocked && ! isset( get_option( 'dhali_ollie_css_ownership', array() )['dhali-media-text-photo-frame'] ), 'Edited Ollie copy cannot take ownership' );
+	$drifted['dhali-media-text-photo-frame'] = $saved_frame;
+	$GLOBALS['dhali_test_options']['ollie_pro_css_classes'] = $drifted;
+
 	$cmd->activate( array(), array( 'class' => 'dhali-media-text-photo-frame', 'apply' => true ) );
 	test_assert( get_option( 'dhali_ollie_css_ownership' )['dhali-media-text-photo-frame']['active'], 'Explicit activation opts into Ollie' );
+
+	// Drift after activation stays visible in the read-only report; nothing is overwritten.
+	$after = get_option( 'ollie_pro_css_classes' );
+	$owned_frame = $after['dhali-media-text-photo-frame'];
+	$after['dhali-media-text-photo-frame']['css'] = str_replace( '32%', '12%', $owned_frame['css'] );
+	$GLOBALS['dhali_test_options']['ollie_pro_css_classes'] = $after;
+	$writes_before = $GLOBALS['dhali_test_writes'];
+	$rest_before   = $GLOBALS['dhali_test_rest'];
+	WP_CLI::$output = array();
+	$cmd->import( array(), array( 'class' => 'dhali-media-text-photo-frame' ) );
+	test_assert( array( 'dhali-media-text-photo-frame: edited [Ollie-owned] (dry run)' ) === WP_CLI::$output, 'Post-activation edit reported as edited and Ollie-owned' );
+	$cmd->import( array(), array( 'class' => 'dhali-media-text-photo-frame', 'apply' => true ) );
+	test_assert( $writes_before === $GLOBALS['dhali_test_writes'] && $rest_before === $GLOBALS['dhali_test_rest'], 'Edited Ollie copy is never overwritten by import' );
+	test_assert( false !== strpos( get_option( 'ollie_pro_css_classes' )['dhali-media-text-photo-frame']['css'], '12%' ), 'Ollie edit preserved' );
+	$after['dhali-media-text-photo-frame'] = $owned_frame;
+	$GLOBALS['dhali_test_options']['ollie_pro_css_classes'] = $after;
 
 	$cmd->deactivate( array(), array( 'class' => 'dhali-media-text-photo-frame', 'apply' => true ) );
 	test_assert( false === get_option( 'dhali_ollie_css_ownership' )['dhali-media-text-photo-frame']['active'], 'Deactivation restores plugin fallback ownership' );

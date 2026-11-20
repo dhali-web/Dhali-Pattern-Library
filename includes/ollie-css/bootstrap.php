@@ -59,11 +59,45 @@ function dhali_ollie_css_is_managed( $class_name, $record, $ownership, $vendor_a
 	return is_callable( $sanitizer ) && '' !== $sanitizer( $record['css'] );
 }
 
+/** Editor-only rules a class needs in addition to its declarations. */
+function dhali_ollie_css_editor_rules( $class_name ) {
+	if ( 'dhali-media-text-photo-caption' === $class_name ) {
+		// Core's editor wrapper selector outranks the normal caption rule.
+		return ".dhali-media-text-photo-caption.block-editor-block-list__block {\n\tposition: absolute;\n}\n";
+	}
+	return '';
+}
+
 /**
- * Render only unmanaged classes from the version-controlled fragments.
- * Editor-only caption specificity rule remains with the caption fallback.
+ * The rules Ollie prints on the frontend for a managed record (base and state
+ * CSS, same selectors), so the editor can show exactly what visitors see.
  */
-function dhali_ollie_css_build_fallback( $records, $ownership, $vendor_available ) {
+function dhali_ollie_css_record_rules( $class_name, $record ) {
+	$sanitizer = '\\olpo\\Extensions\\ClassManager\\sanitize_css';
+	$states    = array(
+		'css'         => '',
+		'hoverCss'    => ':hover',
+		'focusCss'    => ':focus',
+		'activeCss'   => ':active',
+		'disabledCss' => ':disabled',
+	);
+	$css = '';
+	foreach ( $states as $field => $pseudo ) {
+		$value = isset( $record[ $field ] ) && is_string( $record[ $field ] ) ? $sanitizer( $record[ $field ] ) : '';
+		if ( '' !== $value ) {
+			$css .= '.' . $class_name . $pseudo . " {\n" . $value . "\n}\n";
+		}
+	}
+	return $css;
+}
+
+/**
+ * Unmanaged classes: the version-controlled fragment, in every context.
+ * Managed classes: nothing on the frontend (Ollie prints them once). In the
+ * editor, Ollie's copy only applies while its per-browser Class Manager toggle
+ * is on, so mirror Ollie's frontend rules there unconditionally.
+ */
+function dhali_ollie_css_build_fallback( $records, $ownership, $vendor_available, $context = 'frontend' ) {
 	$css = '';
 	foreach ( dhali_ollie_css_registry() as $class_name => $definition ) {
 		$source = dhali_ollie_css_source( $class_name );
@@ -73,14 +107,13 @@ function dhali_ollie_css_build_fallback( $records, $ownership, $vendor_available
 
 		$record = isset( $records[ $class_name ] ) ? $records[ $class_name ] : null;
 		if ( dhali_ollie_css_is_managed( $class_name, $record, $ownership, $vendor_available ) ) {
+			if ( 'editor' === $context ) {
+				$css .= dhali_ollie_css_record_rules( $class_name, $record ) . dhali_ollie_css_editor_rules( $class_name );
+			}
 			continue;
 		}
 
-		$css .= '.' . $class_name . " {\n" . $source . "\n}\n";
-		if ( 'dhali-media-text-photo-caption' === $class_name ) {
-			// Core's editor wrapper selector outranks the normal caption rule.
-			$css .= ".dhali-media-text-photo-caption.block-editor-block-list__block {\n\tposition: absolute;\n}\n";
-		}
+		$css .= '.' . $class_name . " {\n" . $source . "\n}\n" . dhali_ollie_css_editor_rules( $class_name );
 	}
 	return $css;
 }
@@ -92,7 +125,8 @@ function dhali_ollie_css_enqueue_fallback() {
 	$css       = dhali_ollie_css_build_fallback(
 		is_array( $records ) ? $records : array(),
 		is_array( $ownership ) ? $ownership : array(),
-		dhali_ollie_css_vendor_available()
+		dhali_ollie_css_vendor_available(),
+		is_admin() ? 'editor' : 'frontend'
 	);
 
 	if ( '' === $css ) {
@@ -177,6 +211,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
 			$records = is_array( $records ) ? $records : array();
 			$meta    = get_option( 'dhali_ollie_css_imports', array() );
 			$meta    = is_array( $meta ) ? $meta : array();
+			$owners  = get_option( 'dhali_ollie_css_ownership', array() );
+			$owners  = is_array( $owners ) ? $owners : array();
+			$vendor  = dhali_ollie_css_vendor_available();
 
 			if ( $apply ) {
 				$this->require_vendor_editor();
@@ -190,7 +227,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
 					continue;
 				}
 
-				\WP_CLI::log( sprintf( '%s: %s%s', $name, $state, $apply ? ' (apply requested)' : ' (dry run)' ) );
+				// Report who serves the frontend so drift after activation stays visible.
+				$owner = dhali_ollie_css_is_managed( $name, $records[ $name ] ?? null, $owners, $vendor ) ? 'Ollie-owned' : 'plugin fallback';
+				\WP_CLI::log( sprintf( '%s: %s [%s]%s', $name, $state, $owner, $apply ? ' (apply requested)' : ' (dry run)' ) );
 				if ( ! $apply || ! in_array( $state, array( 'missing', 'empty' ), true ) ) {
 					continue;
 				}
@@ -286,6 +325,10 @@ if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
 			}
 			if ( $active && ! dhali_ollie_css_is_managed( $name, $records[ $name ] ?? null, array( $name => array( 'active' => true ) ), true ) ) {
 				\WP_CLI::error( 'Ollie class must have safe nonempty CSS and loadGlobal=true.' );
+			}
+			// Keep the registry canonical: hand over only an unedited copy of it.
+			if ( $active && 'current' !== dhali_ollie_css_classify( $name, is_array( $records ) ? $records : array(), $meta ) ) {
+				\WP_CLI::error( 'Ollie class differs from the Dhali registry source; resolve the drift before activation.' );
 			}
 			$ownership = get_option( 'dhali_ollie_css_ownership', array() );
 			$ownership = is_array( $ownership ) ? $ownership : array();
