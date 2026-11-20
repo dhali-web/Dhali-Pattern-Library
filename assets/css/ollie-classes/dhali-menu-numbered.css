@@ -1,0 +1,48 @@
+/* Attach this class to a vertical Navigation block whose Overlay Menu is set to Off
+ * (for example inside an Ollie Menu Designer mobile menu).
+ * Top-level items become full-width rows with a 01, 02… number, a divider and a trailing arrow.
+ * Numbers follow the linked menu's order; submenu items are not numbered, and parent items
+ * keep Core's submenu chevron instead of the arrow. Links inherit the Navigation block's
+ * native font, size, weight, case and color, including inside the open mobile overlay.
+ * "&.wp-block-navigation" outranks the theme's open-overlay link rules by specificity alone. */
+&.wp-block-navigation .wp-block-navigation__container {
+	counter-reset: dhali-menu-number;
+	flex-direction: column;
+	align-items: stretch;
+	width: 100%;
+	gap: 0;
+}
+
+&.wp-block-navigation .wp-block-navigation__container > .wp-block-navigation-item {
+	counter-increment: dhali-menu-number;
+	width: 100%;
+	border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+}
+
+&.wp-block-navigation .wp-block-navigation__container > .wp-block-navigation-item:first-child {
+	border-top: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+}
+
+&.wp-block-navigation .wp-block-navigation__container > .wp-block-navigation-item > .wp-block-navigation-item__content {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	gap: var(--wp--preset--spacing--medium);
+	padding: var(--wp--preset--spacing--small) 0;
+	font-family: inherit;
+	font-size: inherit;
+	text-decoration: none;
+}
+
+&.wp-block-navigation .wp-block-navigation__container > .wp-block-navigation-item > .wp-block-navigation-item__content::before {
+	content: counter(dhali-menu-number, decimal-leading-zero) / "";
+	min-width: 1.75em;
+	font-size: 0.45em;
+	letter-spacing: 0.1em;
+}
+
+&.wp-block-navigation .wp-block-navigation__container > .wp-block-navigation-item:not(.has-child) > .wp-block-navigation-item__content::after {
+	content: "\2192" / "";
+	margin-inline-start: auto;
+	color: var(--wp--preset--color--primary-accent, currentColor);
+}

@@ -27,5 +27,8 @@ function dhali_ollie_css_registry() {
 		'dhali-term-chips'               => array(
 			'file' => 'assets/css/ollie-classes/dhali-term-chips.css',
 		),
+		'dhali-menu-numbered'            => array(
+			'file' => 'assets/css/ollie-classes/dhali-menu-numbered.css',
+		),
 	);
 }

@@ -42,7 +42,7 @@ namespace {
 	require __DIR__ . '/../includes/ollie-css/bootstrap.php';
 	$registry = dhali_ollie_css_registry();
 	$names    = array_keys( $registry );
-	test_assert( $names === array( 'dhali-media-text-photo-frame', 'dhali-media-text-photo-caption', 'dhali-sidebar-sticky-container', 'dhali-query-numbered', 'dhali-term-chips' ), 'Exactly five approved classes' );
+	test_assert( $names === array( 'dhali-media-text-photo-frame', 'dhali-media-text-photo-caption', 'dhali-sidebar-sticky-container', 'dhali-query-numbered', 'dhali-term-chips', 'dhali-menu-numbered' ), 'Exactly six approved classes' );
 	test_assert( isset( $GLOBALS['dhali_test_actions']['enqueue_block_assets'] ), 'Block-content asset hook exists' );
 	test_assert( count( $GLOBALS['dhali_test_actions']['enqueue_block_assets'] ) === 1, 'Fallback is only hooked once' );
 
@@ -68,7 +68,20 @@ namespace {
 	test_assert( false === strpos( $numbered_rules, 'font-' ) && false === strpos( $numbered_rules, 'color' ), 'Number typography and color stay with the native rail group settings' );
 	test_assert( false !== strpos( $chips, 'flex-wrap: wrap;' ) && false !== strpos( $chips, '& .wp-block-post-terms__separator {' ), 'Chips wrap and hide separators' );
 	test_assert( false !== strpos( $chips, 'var(--wp--preset--color--primary-alt-accent)' ) && false === strpos( $chips, 'border-radius' ), 'Chips use the tint preset with square corners' );
-	foreach ( array( $numbered, $chips ) as $fragment ) {
+	$menu       = dhali_ollie_css_source( $names[5] );
+	test_assert( is_string( $menu ), 'Menu numbering fragment exists and loads' );
+	$menu_rules = preg_replace( '#/\*.*?\*/#s', '', $menu );
+	$menu_top   = '&.wp-block-navigation .wp-block-navigation__container > .wp-block-navigation-item';
+	test_assert( 0 === strpos( trim( $menu_rules ), '&.wp-block-navigation .wp-block-navigation__container {' ) && false !== strpos( $menu_rules, 'counter-reset: dhali-menu-number;' ), 'Counter resets on each Navigation block\'s top-level list' );
+	test_assert( false !== strpos( $menu_rules, $menu_top . ' {' ) && false !== strpos( $menu_rules, 'counter-increment: dhali-menu-number;' ), 'Counter increments only on top-level items' );
+	test_assert( false === strpos( $menu_rules, 'submenu' ) && substr_count( $menu_rules, '{' ) === substr_count( $menu_rules, '&.wp-block-navigation .wp-block-navigation__container' ), 'Every rule is anchored to the top-level container, never to submenus' );
+	test_assert( false !== strpos( $menu_rules, 'counter(dhali-menu-number, decimal-leading-zero) / "";' ), 'Zero-padded number is hidden from assistive tech' );
+	test_assert( false !== strpos( $menu_rules, $menu_top . ':not(.has-child) > .wp-block-navigation-item__content::after {' ) && false !== strpos( $menu_rules, 'content: "\2192" / "";' ), 'Arrow skips submenu parents and is hidden from assistive tech' );
+	test_assert( false !== strpos( $menu_rules, 'var(--wp--preset--spacing--small)' ) && false !== strpos( $menu_rules, 'var(--wp--preset--spacing--medium)' ) && false !== strpos( $menu_rules, 'var(--wp--preset--color--primary-accent, currentColor)' ), 'Row spacing and arrow color use presets' );
+	test_assert( false !== strpos( $menu_rules, 'font-family: inherit;' ) && false !== strpos( $menu_rules, 'font-size: inherit;' ) && false === strpos( $menu_rules, 'font-weight' ) && false === strpos( $menu_rules, 'text-transform' ), 'Link typography is inherited from the Navigation block\'s native settings' );
+	test_assert( ! preg_match( '/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?)\(|shadow/i', $menu_rules ), 'No hardcoded colors or shadows' );
+
+	foreach ( array( $numbered, $chips, $menu ) as $fragment ) {
 		test_assert( false === strpos( $fragment, '!important' ) && false === strpos( $fragment, '@import' ), 'New fragments avoid !important and @import' );
 	}
 
@@ -96,6 +109,7 @@ namespace {
 	test_assert( false !== strpos( $full_fallback, '.dhali-sidebar-sticky-container {' ), 'Sticky sidebar fallback generated' );
 	test_assert( false !== strpos( $full_fallback, '.dhali-query-numbered {' ), 'Query numbering fallback generated' );
 	test_assert( false !== strpos( $full_fallback, '.dhali-term-chips {' ), 'Term chips fallback generated' );
+	test_assert( false !== strpos( $full_fallback, ".dhali-menu-numbered {\n" . $menu . "\n}" ), 'Menu numbering fallback wraps the canonical fragment' );
 	test_assert( false !== strpos( $full_fallback, '.dhali-media-text-photo-caption.block-editor-block-list__block {' ), 'Editor caption fix preserved' );
 	test_assert( false !== strpos( $full_fallback, '&::before {' ), 'Nested pseudo-element in fallback' );
 
@@ -111,6 +125,8 @@ namespace {
 	$chips_managed = dhali_ollie_css_build_fallback( array( $names[4] => $chips_record ), array( $names[4] => array( 'active' => true ) ), true );
 	test_assert( false === strpos( $chips_managed, '.dhali-term-chips {' ), 'Managed chips fallback suppressed' );
 	test_assert( false !== strpos( $chips_managed, '.dhali-query-numbered {' ), 'Numbering fallback retained when chips managed' );
+	test_assert( false !== strpos( $chips_managed, '.dhali-menu-numbered {' ), 'Menu numbering fallback retained when chips managed' );
+	test_assert( ! dhali_ollie_css_is_managed( $names[5], array( 'css' => $menu, 'loadGlobal' => true ), array(), true ), 'Unactivated menu numbering record uses fallback' );
 	test_assert( ! dhali_ollie_css_is_managed( $names[3], array( 'css' => $numbered, 'loadGlobal' => true ), array(), true ), 'Unactivated numbering record uses fallback' );
 	test_assert( false !== strpos( $frame_managed, '.dhali-media-text-photo-caption.block-editor-block-list__block {' ), 'Editor caption fix retained' );
 
