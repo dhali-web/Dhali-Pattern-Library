@@ -3,9 +3,10 @@
  * Read-only, file-backed FSE template part provider.
  *
  * Canonical source: this plugin's parts/*.html. No database writes occur here.
- * Only names prefixed with `dhali-header-`, `dhali-footer-` or
- * `dhali-sidebar-` are exposed. Existing WordPress theme/database results
- * always take precedence.
+ * Only names prefixed with `dhali-header-`, `dhali-footer-`, `dhali-sidebar-`
+ * or `dhali-menu-` are exposed. `dhali-menu-` parts use the `menu` area that
+ * Ollie Menu Designer registers and are skipped while that area is absent.
+ * Existing WordPress theme/database results always take precedence.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Determine area from the file slug. An ambiguous filename is ignored.
  *
  * @param string $slug File slug.
- * @return string|null Header/footer/sidebar area or null.
+ * @return string|null Header/footer/sidebar/menu area or null.
  */
 function dhali_pattern_library_part_area( $slug ) {
 	if ( preg_match( '/^dhali-header-[a-z0-9][a-z0-9-]*$/', $slug ) ) {
@@ -28,7 +29,27 @@ function dhali_pattern_library_part_area( $slug ) {
 	if ( preg_match( '/^dhali-sidebar-[a-z0-9][a-z0-9-]*$/', $slug ) ) {
 		return 'sidebar';
 	}
+	if ( preg_match( '/^dhali-menu-[a-z0-9][a-z0-9-]*$/', $slug ) ) {
+		return 'menu';
+	}
 	return null;
+}
+
+/**
+ * Whether an area is registered on this site. Core always registers
+ * header/footer; `menu` exists only while Ollie Menu Designer is active.
+ *
+ * @param string $area Template part area.
+ * @return bool
+ */
+function dhali_pattern_library_part_area_available( $area ) {
+	if ( 'menu' !== $area ) {
+		return true;
+	}
+	if ( ! function_exists( 'get_allowed_block_template_part_areas' ) ) {
+		return false;
+	}
+	return in_array( 'menu', array_column( get_allowed_block_template_part_areas(), 'area' ), true );
 }
 
 /**
@@ -45,7 +66,7 @@ function dhali_pattern_library_part_files() {
 	foreach ( glob( $dir . '*.html' ) ?: array() as $path ) {
 		$slug = basename( $path, '.html' );
 		$area = dhali_pattern_library_part_area( $slug );
-		if ( null !== $area && is_readable( $path ) ) {
+		if ( null !== $area && dhali_pattern_library_part_area_available( $area ) && is_readable( $path ) ) {
 			$files[ $slug ] = array( 'area' => $area, 'path' => $path );
 		}
 	}
@@ -66,7 +87,9 @@ function dhali_pattern_library_build_part( $slug, $item ) {
 	$part->slug           = $slug;
 	$part->type           = 'wp_template_part';
 	$part->area           = $item['area'];
-	$part->title          = ucwords( str_replace( '-', ' ', preg_replace( '/^dhali-/', '', $slug ) ) );
+	$part->title          = 'menu' === $item['area']
+		? ucwords( str_replace( '-', ' ', preg_replace( '/^dhali-menu-/', '', $slug ) ) ) . ' Menu'
+		: ucwords( str_replace( '-', ' ', preg_replace( '/^dhali-/', '', $slug ) ) );
 	$part->description    = __( 'Plugin-provided Dhali template part.', 'Dhali-Pattern-Library' );
 	$part->content        = file_get_contents( $item['path'] );
 	$part->source         = 'plugin';

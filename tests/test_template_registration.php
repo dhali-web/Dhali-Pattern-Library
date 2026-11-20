@@ -34,6 +34,15 @@ function trailingslashit( $path ) {
 	return rtrim( $path, '/\\' ) . '/';
 }
 class WP_Block_Template {}
+// Ollie Menu Designer registers the `menu` area; toggled below to test its absence.
+$GLOBALS['dhali_test_menu_area'] = true;
+function get_allowed_block_template_part_areas() {
+	$areas = array( array( 'area' => 'header' ), array( 'area' => 'footer' ), array( 'area' => 'sidebar' ) );
+	if ( $GLOBALS['dhali_test_menu_area'] ) {
+		$areas[] = array( 'area' => 'menu' );
+	}
+	return $areas;
+}
 
 function dhali_template_test_assert( $condition, $message ) {
 	if ( ! $condition ) {
@@ -92,7 +101,7 @@ dhali_template_test_assert( dhali_get_block_template( null, 'test-theme//not-pre
 
 // The pre-existing plugin template-part callbacks retain their authority.
 $parts = dhali_pattern_library_get_parts( array(), array(), 'wp_template_part' );
-dhali_template_test_assert( count( $parts ) === 4, 'Provider exposes the three header/footer parts plus the sidebar part' );
+dhali_template_test_assert( count( $parts ) === 5, 'Provider exposes the three header/footer parts, the sidebar part and the menu part' );
 foreach ( $parts as $part ) {
 	dhali_template_test_assert( $part->type === 'wp_template_part', 'Plugin part type remains unchanged' );
 }
@@ -115,6 +124,36 @@ dhali_template_test_assert( $with_saved === array( $saved_sidebar ), 'Saved/data
 dhali_template_test_assert( dhali_pattern_library_get_part_file( null, 'test-theme//dhali-sidebar-contact-card', 'wp_template_part' )->area === 'sidebar', 'Direct sidebar part lookup' );
 dhali_template_test_assert( dhali_pattern_library_get_part_file( null, 'test-theme//dhali-sidebar-contact-card', 'wp_template' ) === null, 'Sidebar part never served as a wp_template' );
 dhali_template_test_assert( dhali_register_block_templates( array(), array( 'slug__in' => array( 'dhali-sidebar-contact-card' ) ), 'wp_template' ) === array(), 'Full-template provider does not see the sidebar part' );
+// Menu prefix maps to Ollie Menu Designer's `menu` area.
+dhali_template_test_assert( dhali_pattern_library_part_area( 'dhali-menu-numbered-mobile' ) === 'menu', 'dhali-menu-* maps to menu area' );
+foreach ( array( 'menu', 'dhali-menu-', 'dhali-menu-Bad', 'dhali-menus-x', 'dhali-menu_x', 'dhali-mobile-menu' ) as $bad_slug ) {
+	dhali_template_test_assert( dhali_pattern_library_part_area( $bad_slug ) === null, "Slug {$bad_slug} ignored" );
+}
+$menu_parts = dhali_pattern_library_get_parts( array(), array( 'area' => 'menu' ), 'wp_template_part' );
+dhali_template_test_assert( count( $menu_parts ) === 1 && $menu_parts[0]->slug === 'dhali-menu-numbered-mobile', 'Area query returns only the menu part' );
+$menu_part = $menu_parts[0];
+dhali_template_test_assert( $menu_part->area === 'menu' && $menu_part->id === 'test-theme//dhali-menu-numbered-mobile' && $menu_part->type === 'wp_template_part', 'Menu part identity, type and area' );
+dhali_template_test_assert( $menu_part->title === 'Numbered Mobile Menu', 'Menu part title reads "<name> Menu"' );
+dhali_template_test_assert( $menu_part->source === 'plugin' && false === $menu_part->is_custom && false === $menu_part->has_theme_file, 'Menu part is a plugin-owned file part' );
+$menu_html = $menu_part->content;
+dhali_template_test_assert( false === strpos( $menu_html, '"ref":' ), 'Portable menu part carries no site-specific navigation ref' );
+dhali_template_test_assert( 1 === substr_count( $menu_html, '<!-- wp:navigation {' ) && 1 === substr_count( $menu_html, '<!-- /wp:navigation -->' ) && 4 === substr_count( $menu_html, '<!-- wp:navigation-link {' ), 'Navigation ships explicit placeholder links (never empty, so Core cannot apply its fallback menu)' );
+dhali_template_test_assert( 1 === preg_match( '/<!-- wp:navigation \{[^>]*"overlayMenu":"never"[^>]*"className":"dhali-menu-numbered"[^>]*"ollieCustomClasses":\["dhali-menu-numbered"\][^>]*-->/', $menu_html ), 'Navigation keeps overlay off, the registered Dhali class and its Ollie chip' );
+dhali_template_test_assert( false !== strpos( $menu_html, '<!-- wp:site-logo' ) && false !== strpos( $menu_html, '<!-- wp:site-title' ) && false !== strpos( $menu_html, '<!-- wp:heading' ) && false !== strpos( $menu_html, '<!-- wp:button ' ), 'Logo, title, heading and CTA are native editable blocks' );
+dhali_template_test_assert( ! preg_match( '/laswimclub|Racers|"id":\d|"ref":\d|https?:\/\//i', $menu_html ), 'No client-specific names, IDs or absolute URLs' );
+dhali_template_test_assert( ! preg_match( '/href="[^"#]/', $menu_html ) && false !== strpos( $menu_html, 'href="#">' ), 'CTA ships as a focusable placeholder link' );
+$saved_menu = new WP_Block_Template();
+$saved_menu->slug = 'dhali-menu-numbered-mobile';
+dhali_template_test_assert( dhali_pattern_library_get_parts( array( $saved_menu ), array( 'area' => 'menu' ), 'wp_template_part' ) === array( $saved_menu ), 'Saved/database menu part takes precedence over the file (no duplicate)' );
+dhali_template_test_assert( dhali_pattern_library_get_part_file( null, 'test-theme//dhali-menu-numbered-mobile', 'wp_template_part' )->area === 'menu', 'Direct menu part lookup' );
+dhali_template_test_assert( dhali_pattern_library_get_part_file( $saved_menu, 'test-theme//dhali-menu-numbered-mobile', 'wp_template_part' ) === $saved_menu, 'Direct lookup keeps an existing saved part' );
+dhali_template_test_assert( dhali_pattern_library_get_part_file( null, 'other-theme//dhali-menu-numbered-mobile', 'wp_template_part' ) === null, 'Menu part only served for the active theme' );
+dhali_template_test_assert( count( dhali_pattern_library_get_parts( array(), array( 'area' => 'header' ), 'wp_template_part' ) ) === 2 && count( dhali_pattern_library_get_parts( array(), array( 'area' => 'footer' ), 'wp_template_part' ) ) === 1 && count( dhali_pattern_library_get_parts( array(), array( 'area' => 'sidebar' ), 'wp_template_part' ) ) === 1, 'Header/footer/sidebar registration unaffected by the menu part' );
+$GLOBALS['dhali_test_menu_area'] = false;
+dhali_template_test_assert( dhali_pattern_library_get_parts( array(), array( 'area' => 'menu' ), 'wp_template_part' ) === array() && dhali_pattern_library_get_part_file( null, 'test-theme//dhali-menu-numbered-mobile', 'wp_template_part' ) === null, 'Menu part hidden while the menu area is not registered' );
+dhali_template_test_assert( count( dhali_pattern_library_get_parts( array(), array(), 'wp_template_part' ) ) === 4, 'Other parts still served without the menu area' );
+$GLOBALS['dhali_test_menu_area'] = true;
+
 $parts_after_template_provider = dhali_register_block_templates( $parts, array(), 'wp_template_part' );
 dhali_template_test_assert( $parts_after_template_provider === $parts, 'Full-page provider never alters part query' );
 
